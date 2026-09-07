@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Title
 import androidx.compose.material.icons.filled.FormatQuote
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
@@ -48,6 +49,7 @@ import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.IntOffset
@@ -123,6 +125,7 @@ private fun EditorContent(
     onUpdateSettings: ((com.livrohub.domain.model.AppSettings) -> com.livrohub.domain.model.AppSettings) -> Unit
 ) {
     var saveDialogOpen by remember { mutableStateOf(false) }
+    var topMenuOpen by remember { mutableStateOf(false) }
 
     var showTutorial by remember(settings.showEditorTutorial) { mutableStateOf(settings.showEditorTutorial) }
     var topActionsBounds by remember { mutableStateOf(Rect.Zero) }
@@ -177,12 +180,19 @@ private fun EditorContent(
             TopAppBar(
                 title = {
                     Column {
-                        Text(text = uiState.chapterTitle.ifBlank { "Capítulo" }, style = LivroHubTheme.typography.titleLarge)
+                        Text(
+                            text = uiState.chapterTitle.ifBlank { "Capítulo" },
+                            style = LivroHubTheme.typography.titleLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                         uiState.latestSequenceNumber?.let { sequence ->
                             Text(
                                 text = "Última versão: #$sequence",
                                 style = LivroHubTheme.typography.bodySmall,
-                                color = LivroHubTheme.colors.onSurfaceVariant
+                                color = LivroHubTheme.colors.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -193,46 +203,82 @@ private fun EditorContent(
                     }
                 },
                 actions = {
-                    Row(modifier = Modifier.onGloballyPositioned { coordinates ->
-                        topActionsBounds = coordinates.boundsInRoot()
-                    }) {
+                    Box {
                         IconButton(
-                            onClick = { saveDialogOpen = true },
-                            enabled = !uiState.isSaving && !uiState.isLoading
-                        ) {
-                            if (uiState.isSaving) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.padding(4.dp),
-                                    color = LivroHubTheme.colors.onBackground,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Icon(Icons.Default.Save, contentDescription = "Salvar versão")
+                            onClick = { topMenuOpen = true },
+                            modifier = Modifier.onGloballyPositioned { coordinates ->
+                                topActionsBounds = coordinates.boundsInRoot()
                             }
-                        }
-                        IconButton(
-                            onClick = onOpenPreview,
-                            enabled = !uiState.isLoading
                         ) {
-                            Icon(Icons.Default.Visibility, contentDescription = "Visão do capítulo")
+                            Icon(Icons.Default.MoreVert, contentDescription = "Mais opções")
                         }
-                        IconButton(
-                            onClick = onOpenRevision,
-                            enabled = !uiState.isLoading
+
+                        DropdownMenu(
+                            expanded = topMenuOpen,
+                            onDismissRequest = { topMenuOpen = false }
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.FactCheck, contentDescription = "Revisão")
-                        }
-                        IconButton(
-                            onClick = onOpenImages,
-                            enabled = !uiState.isLoading
-                        ) {
-                            Icon(Icons.Default.Image, contentDescription = "Imagens")
-                        }
-                        IconButton(
-                            onClick = onOpenHistory,
-                            enabled = !uiState.isLoading
-                        ) {
-                            Icon(Icons.Default.History, contentDescription = "Histórico")
+                            DropdownMenuItem(
+                                text = { Text(if (uiState.isSaving) "Salvando..." else "Salvar versão") },
+                                enabled = !uiState.isSaving && !uiState.isLoading,
+                                leadingIcon = {
+                                    if (uiState.isSaving) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(18.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                    } else {
+                                        Icon(Icons.Default.Save, contentDescription = null)
+                                    }
+                                },
+                                onClick = {
+                                    topMenuOpen = false
+                                    saveDialogOpen = true
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Visão do capítulo") },
+                                enabled = !uiState.isLoading,
+                                leadingIcon = {
+                                    Icon(Icons.Default.Visibility, contentDescription = null)
+                                },
+                                onClick = {
+                                    topMenuOpen = false
+                                    onOpenPreview()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Revisão") },
+                                enabled = !uiState.isLoading,
+                                leadingIcon = {
+                                    Icon(Icons.AutoMirrored.Filled.FactCheck, contentDescription = null)
+                                },
+                                onClick = {
+                                    topMenuOpen = false
+                                    onOpenRevision()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Imagens") },
+                                enabled = !uiState.isLoading,
+                                leadingIcon = {
+                                    Icon(Icons.Default.Image, contentDescription = null)
+                                },
+                                onClick = {
+                                    topMenuOpen = false
+                                    onOpenImages()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Histórico") },
+                                enabled = !uiState.isLoading,
+                                leadingIcon = {
+                                    Icon(Icons.Default.History, contentDescription = null)
+                                },
+                                onClick = {
+                                    topMenuOpen = false
+                                    onOpenHistory()
+                                }
+                            )
                         }
                     }
                 },

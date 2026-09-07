@@ -265,6 +265,14 @@
 - O parser inline da visao passou a ser recursivo, permitindo combinar estilos como negrito + sublinhado ou italico + destaque no mesmo trecho.
 - Testes de formatacao foram ampliados para sublinhado, listas, checklist e marcador personalizado; testes de exportacao cobrem os novos formatos.
 
+## Modulo 21 — Barra superior compacta do editor (2026-09-07)
+
+- Removidos da barra superior do editor os cinco icones de acao que comprimiam excessivamente a area do titulo em telas estreitas.
+- A barra superior agora mantem apenas voltar, titulo/subtitulo e um menu de tres pontos.
+- Salvar versao, visao do capitulo, revisao, imagens e historico passaram para o menu de overflow, mantendo os mesmos estados de habilitacao.
+- O titulo do capitulo e o texto de ultima versao foram limitados a uma linha com reticencias quando necessario, evitando quebra por caractere como ocorria em aparelhos estreitos.
+- `compileDebugKotlin`, `testDebugUnitTest`, `assembleDebug` e `git diff --check` executados com sucesso apos a alteracao.
+
 ## Observacoes
 
 - O ambiente local atual possui Java/Android SDK suficientes para `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` em modo offline.
