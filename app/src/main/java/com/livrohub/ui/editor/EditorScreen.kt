@@ -11,9 +11,15 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.FactCheck
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material.icons.filled.FormatStrikethrough
+import androidx.compose.material.icons.filled.FormatUnderlined
+import androidx.compose.material.icons.filled.Highlight
+import androidx.compose.material.icons.filled.FormatListNumbered
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Title
 import androidx.compose.material.icons.filled.FormatQuote
 import androidx.compose.material.icons.filled.History
@@ -151,11 +157,18 @@ private fun EditorContent(
     val currentEditorText = rememberUpdatedState(uiState.editorText)
     val currentOnTextChange = rememberUpdatedState(onTextChange)
     val selectionToolbar = remember {
-        SelectionFormattingTextToolbar { format ->
-            currentOnTextChange.value(
-                applyMarkdownFormat(currentEditorText.value, format)
-            )
-        }
+        SelectionFormattingTextToolbar(
+            onFormatRequested = { format ->
+                currentOnTextChange.value(
+                    applyMarkdownFormat(currentEditorText.value, format)
+                )
+            },
+            onCustomMarkerRequested = { marker ->
+                currentOnTextChange.value(
+                    applyCustomMarkdownMarker(currentEditorText.value, marker)
+                )
+            }
+        )
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -408,9 +421,12 @@ private data class SelectionMenuState(
  * normalmente após o gesto de pressionar e segurar uma palavra.
  */
 private class SelectionFormattingTextToolbar(
-    private val onFormatRequested: (MarkdownFormat) -> Unit
+    private val onFormatRequested: (MarkdownFormat) -> Unit,
+    private val onCustomMarkerRequested: (String) -> Unit
 ) : TextToolbar {
     var menuState by mutableStateOf<SelectionMenuState?>(null)
+        private set
+    var customMarkersVisible by mutableStateOf(false)
         private set
 
     override val status: TextToolbarStatus
@@ -434,10 +450,20 @@ private class SelectionFormattingTextToolbar(
 
     override fun hide() {
         menuState = null
+        customMarkersVisible = false
     }
 
     fun applyFormat(format: MarkdownFormat) {
         onFormatRequested(format)
+    }
+
+    fun toggleCustomMarkers() {
+        customMarkersVisible = !customMarkersVisible
+    }
+
+    fun applyCustomMarker(marker: String) {
+        onCustomMarkerRequested(marker)
+        customMarkersVisible = false
     }
 
     fun copy() {
@@ -500,6 +526,56 @@ private fun SelectionFormattingPopup(toolbar: SelectionFormattingTextToolbar) {
                         onClick = { toolbar.applyFormat(MarkdownFormat.Quote) },
                         contentDescription = "Citação"
                     ) { Icon(Icons.Default.FormatQuote, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                }
+
+                Row(
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CompactFormattingButton(
+                        onClick = { toolbar.applyFormat(MarkdownFormat.Underline) },
+                        contentDescription = "Sublinhado"
+                    ) { Icon(Icons.Default.FormatUnderlined, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    CompactFormattingButton(
+                        onClick = { toolbar.applyFormat(MarkdownFormat.Highlight) },
+                        contentDescription = "Destaque"
+                    ) { Icon(Icons.Default.Highlight, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    CompactFormattingButton(
+                        onClick = { toolbar.applyFormat(MarkdownFormat.BulletedList) },
+                        contentDescription = "Lista com marcadores"
+                    ) { Icon(Icons.AutoMirrored.Filled.FormatListBulleted, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    CompactFormattingButton(
+                        onClick = { toolbar.applyFormat(MarkdownFormat.NumberedList) },
+                        contentDescription = "Lista numerada"
+                    ) { Icon(Icons.Default.FormatListNumbered, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    CompactFormattingButton(
+                        onClick = { toolbar.applyFormat(MarkdownFormat.Checklist) },
+                        contentDescription = "Checklist"
+                    ) { Icon(Icons.Default.CheckBox, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    CompactFormattingButton(
+                        onClick = toolbar::toggleCustomMarkers,
+                        contentDescription = "Marcador personalizado"
+                    ) { Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                }
+
+                if (toolbar.customMarkersVisible) {
+                    HorizontalDivider(color = LivroHubTheme.colors.border)
+                    Row(
+                        modifier = Modifier.padding(horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CustomMarkdownMarkers.forEach { marker ->
+                            CompactFormattingButton(
+                                onClick = { toolbar.applyCustomMarker(marker) },
+                                contentDescription = "Usar marcador $marker"
+                            ) {
+                                Text(
+                                    text = marker,
+                                    style = LivroHubTheme.typography.titleMedium
+                                )
+                            }
+                        }
+                    }
                 }
 
                 if (

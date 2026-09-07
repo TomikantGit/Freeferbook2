@@ -44,4 +44,49 @@ class MarkdownParserExportTest {
         assertTrue(html.contains("<blockquote>Citação</blockquote>"))
         assertTrue(html.contains("Parágrafo"))
     }
+
+    @Test
+    fun `plain text export preserves lists underline highlight and custom markers`() {
+        val markdown = """
+            - item simples
+            1. primeiro
+            - [ ] pendente
+            - [x] concluído
+            ★ cena importante
+            ++sublinhado++ e ==destaque==
+        """.trimIndent()
+
+        val plainText = MarkdownParser.parseToPlainText(markdown)
+
+        assertTrue(plainText.contains("• item simples"))
+        assertTrue(plainText.contains("1. primeiro"))
+        assertTrue(plainText.contains("☐ pendente"))
+        assertTrue(plainText.contains("☑ concluído"))
+        assertTrue(plainText.contains("★ cena importante"))
+        assertTrue(plainText.contains("sublinhado"))
+        assertTrue(plainText.contains("destaque"))
+        assertFalse(plainText.contains("++"))
+        assertFalse(plainText.contains("=="))
+    }
+
+    @Test
+    fun `html export renders lists underline highlight and checklist`() {
+        val markdown = """
+            - item um
+            - item dois
+            1. primeiro
+            2. segundo
+            - [ ] revisar
+            ++sublinhado++ ==destaque==
+        """.trimIndent()
+
+        val html = MarkdownParser.parseToHtml(markdown)
+
+        assertTrue(html.contains("<ul><li>item um</li><li>item dois</li></ul>"))
+        assertTrue(html.contains("<ol><li>primeiro</li><li>segundo</li></ol>"))
+        assertTrue(html.contains("class=\"checklist\""))
+        assertTrue(html.contains("☐ revisar"))
+        assertTrue(html.contains("text-decoration: underline"))
+        assertTrue(html.contains("background-color"))
+    }
 }

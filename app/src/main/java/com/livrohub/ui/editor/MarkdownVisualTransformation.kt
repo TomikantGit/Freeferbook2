@@ -8,6 +8,7 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 
 /**
@@ -57,6 +58,22 @@ class MarkdownVisualTransformation : VisualTransformation {
             )
         }
 
+        for (match in UNDERLINE_REGEX.findAll(inputText)) {
+            builder.addStyle(
+                style = SpanStyle(textDecoration = TextDecoration.Underline),
+                start = match.range.first,
+                end = match.range.last + 1
+            )
+        }
+
+        for (match in HIGHLIGHT_REGEX.findAll(inputText)) {
+            builder.addStyle(
+                style = SpanStyle(background = Color(0x55FFD54F)),
+                start = match.range.first,
+                end = match.range.last + 1
+            )
+        }
+
         // Heading 1: # text
         for (match in H1_REGEX.findAll(inputText)) {
             builder.addStyle(
@@ -98,6 +115,8 @@ class MarkdownVisualTransformation : VisualTransformation {
         private val BOLD_REGEX = "\\*\\*(.*?)\\*\\*".toRegex()
         private val ITALIC_REGEX = "(?<!\\*)\\*(?!\\*)(.*?)(?<!\\*)\\*(?!\\*)".toRegex()
         private val STRIKETHROUGH_REGEX = "~~(.*?)~~".toRegex()
+        private val UNDERLINE_REGEX = "\\+\\+(.*?)\\+\\+".toRegex()
+        private val HIGHLIGHT_REGEX = "==(.*?)==".toRegex()
         private val H1_REGEX = "^# (.*)$".toRegex(RegexOption.MULTILINE)
         private val H2_REGEX = "^## (.*)$".toRegex(RegexOption.MULTILINE)
         private val H3_REGEX = "^### (.*)$".toRegex(RegexOption.MULTILINE)

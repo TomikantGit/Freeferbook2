@@ -253,6 +253,18 @@
 - `PdfExporter` fecha `PdfDocument` em todos os caminhos e evita pagina sem linha renderizavel.
 - Adicionado `MarkdownParserExportTest` cobrindo preservacao de texto no fluxo PDF e presenca de texto/formatacao no XHTML usado pelo EPUB.
 
+## Modulo 20 — Formatacao avancada no editor (2026-09-07)
+
+- O menu contextual de formatacao passou a oferecer tambem sublinhado, destaque, lista com marcadores, lista numerada e checklist.
+- Sublinhado usa a sintaxe interna `++texto++` e destaque usa `==texto==`, ambos funcionando como toggle sem perder a selecao.
+- Listas de varias linhas podem alternar entre `- `, numeracao sequencial (`1.`, `2.`, ...), checklist (`- [ ]`) e marcadores personalizados.
+- Adicionados marcadores personalizados `•`, `→`, `★`, `✓` e `◆`, acessiveis por um seletor compacto dentro da toolbar contextual.
+- Ao trocar o tipo de lista, o prefixo anterior e substituido em vez de ser acumulado, permitindo converter uma lista com marcadores em numerada/checklist/customizada diretamente.
+- `MarkdownVisualTransformation` passou a destacar sublinhado e realce dentro do editor.
+- `MarkdownParser` passou a preservar/renderizar os novos formatos na visao do capitulo, PDF e EPUB; listas viram `ul/ol`, checklists preservam estado visual e marcadores personalizados permanecem visiveis.
+- O parser inline da visao passou a ser recursivo, permitindo combinar estilos como negrito + sublinhado ou italico + destaque no mesmo trecho.
+- Testes de formatacao foram ampliados para sublinhado, listas, checklist e marcador personalizado; testes de exportacao cobrem os novos formatos.
+
 ## Observacoes
 
 - O ambiente local atual possui Java/Android SDK suficientes para `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` em modo offline.
