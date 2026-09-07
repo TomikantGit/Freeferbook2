@@ -21,34 +21,79 @@ object MarkdownParser {
      * Gera HTML simples a partir do Markdown (útil para EPUB).
      */
     fun parseToHtml(markdown: String): String {
-        var html = markdown
-        
-        // Escape HTML
-        html = html.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        if (markdown.isBlank()) return ""
 
-        // Block elements
-        html = html.replace(H1_REGEX, "<h1>$1</h1>")
-        html = html.replace(H2_REGEX, "<h2>$1</h2>")
-        html = html.replace(H3_REGEX, "<h3>$1</h3>")
-        html = html.replace(QUOTE_REGEX, "<blockquote>$1</blockquote>")
+        val output = mutableListOf<String>()
+        val paragraphLines = mutableListOf<String>()
 
-        // Inline elements
-        html = html.replace(BOLD_REGEX, "<strong>$1</strong>")
-        html = html.replace(ITALIC_REGEX, "<em>$1</em>")
-        html = html.replace(STRIKETHROUGH_REGEX, "<del>$1</del>")
-
-        // Convert newlines to paragraphs or line breaks
-        val paragraphs = html.split("\n\n").map { p ->
-            val pTrim = p.trim()
-            if (pTrim.startsWith("<h") || pTrim.startsWith("<blockquote")) {
-                pTrim
-            } else {
-                "<p>${pTrim.replace("\n", "<br/>")}</p>"
+        fun flushParagraph() {
+            if (paragraphLines.isNotEmpty()) {
+                output += "<p>${paragraphLines.joinToString("<br/>")}</p>"
+                paragraphLines.clear()
             }
         }
 
-        return paragraphs.joinToString("\n")
+        markdown.lines().forEach { line ->
+            when {
+                line.isBlank() -> flushParagraph()
+                line.startsWith("### ") -> {
+                    flushParagraph()
+                    output += "<h3>${inlineToHtml(line.substring(4))}</h3>"
+                }
+                line.startsWith("## ") -> {
+                    flushParagraph()
+                    output += "<h2>${inlineToHtml(line.substring(3))}</h2>"
+                }
+                line.startsWith("# ") -> {
+                    flushParagraph()
+                    output += "<h1>${inlineToHtml(line.substring(2))}</h1>"
+                }
+                line.startsWith("> ") -> {
+                    flushParagraph()
+                    output += "<blockquote>${inlineToHtml(line.substring(2))}</blockquote>"
+                }
+                else -> paragraphLines += inlineToHtml(line)
+            }
+        }
+        flushParagraph()
+
+        return output.joinToString("\n")
     }
+
+    /**
+     * Remove apenas a sintaxe Markdown suportada, preservando todo o conteúdo textual.
+     * Usado por formatos que precisam de texto visível mesmo sem renderizador HTML.
+     */
+    fun parseToPlainText(markdown: String): String = markdown
+        .lineSequence()
+        .map { line ->
+            val withoutBlockMarker = when {
+                line.startsWith("### ") -> line.substring(4)
+                line.startsWith("## ") -> line.substring(3)
+                line.startsWith("# ") -> line.substring(2)
+                line.startsWith("> ") -> line.substring(2)
+                else -> line
+            }
+            withoutBlockMarker
+                .replace(BOLD_REGEX, "$1")
+                .replace(ITALIC_REGEX, "$1")
+                .replace(STRIKETHROUGH_REGEX, "$1")
+        }
+        .joinToString("\n")
+
+    private fun inlineToHtml(text: String): String {
+        var html = escapeHtml(text)
+        html = html.replace(BOLD_REGEX, "<strong>$1</strong>")
+        html = html.replace(ITALIC_REGEX, "<em>$1</em>")
+        html = html.replace(STRIKETHROUGH_REGEX, "<del>$1</del>")
+        return html
+    }
+
+    private fun escapeHtml(text: String): String = text
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
 
     /**
      * Converte o Markdown em uma `AnnotatedString` do Compose.

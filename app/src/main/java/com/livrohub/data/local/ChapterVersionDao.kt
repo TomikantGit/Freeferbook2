@@ -23,6 +23,10 @@ interface ChapterVersionDao {
     @Query("SELECT * FROM chapter_versions WHERE chapter_id = :chapterId ORDER BY sequence_number DESC LIMIT 1")
     fun observeLatestVersion(chapterId: Long): Flow<ChapterVersionEntity?>
 
+    /** Busca diretamente a última versão salva, sem depender de coleta reativa. */
+    @Query("SELECT * FROM chapter_versions WHERE chapter_id = :chapterId ORDER BY sequence_number DESC LIMIT 1")
+    suspend fun getLatestVersion(chapterId: Long): ChapterVersionEntity?
+
     /** Busca uma versão por ID (não reativo). */
     @Query("SELECT * FROM chapter_versions WHERE id = :versionId")
     suspend fun getById(versionId: Long): ChapterVersionEntity?

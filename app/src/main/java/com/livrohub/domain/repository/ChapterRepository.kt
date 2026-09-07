@@ -19,6 +19,8 @@ interface ChapterRepository {
     fun observeVersions(chapterId: Long): Flow<List<ChapterVersion>>
     /** Observa apenas a versão mais recente de um capítulo. */
     fun observeLatestVersion(chapterId: Long): Flow<ChapterVersion?>
+    /** Busca diretamente a versão mais recente de um capítulo. */
+    suspend fun getLatestVersion(chapterId: Long): ChapterVersion?
 
     /** Cria um novo capítulo associado a um livro. */
     suspend fun createChapter(bookId: Long, title: String, initialContent: String = ""): Long

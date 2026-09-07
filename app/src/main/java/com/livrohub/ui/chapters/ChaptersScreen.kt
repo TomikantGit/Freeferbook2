@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.boundsInRoot
@@ -48,31 +49,56 @@ fun ChaptersScreen(
     
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
     
-    var chapterToExportPdf by remember { mutableStateOf<Chapter?>(null) }
+    var pdfChapterId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var pdfChapterTitle by rememberSaveable { mutableStateOf<String?>(null) }
     val pdfExportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/pdf")
     ) { uri ->
-        val chapter = chapterToExportPdf
-        chapterToExportPdf = null
-        if (uri != null && chapter != null) {
+        val chapterId = pdfChapterId
+        val chapterTitle = pdfChapterTitle
+        pdfChapterId = null
+        pdfChapterTitle = null
+        if (uri != null && chapterId != null && chapterTitle != null) {
             coroutineScope.launch {
-                val content = viewModel.getChapterContent(chapter.id)
-                PdfExporter.exportToPdf(context, uri, chapter.title, content)
+                val content = viewModel.getChapterContent(chapterId)
+                if (content.isBlank()) {
+                    snackbarHostState.showSnackbar(
+                        "A última versão salva deste capítulo está vazia. Salve o texto antes de exportar."
+                    )
+                    return@launch
+                }
+                val success = PdfExporter.exportToPdf(context, uri, chapterTitle, content)
+                snackbarHostState.showSnackbar(
+                    if (success) "PDF exportado com sucesso." else "Não foi possível gerar o PDF."
+                )
             }
         }
     }
 
-    var chapterToExportEpub by remember { mutableStateOf<Chapter?>(null) }
+    var epubChapterId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var epubChapterTitle by rememberSaveable { mutableStateOf<String?>(null) }
     val epubExportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/epub+zip")
     ) { uri ->
-        val chapter = chapterToExportEpub
-        chapterToExportEpub = null
-        if (uri != null && chapter != null) {
+        val chapterId = epubChapterId
+        val chapterTitle = epubChapterTitle
+        epubChapterId = null
+        epubChapterTitle = null
+        if (uri != null && chapterId != null && chapterTitle != null) {
             coroutineScope.launch {
-                val content = viewModel.getChapterContent(chapter.id)
-                EpubExporter.exportToEpub(context, uri, chapter.title, content)
+                val content = viewModel.getChapterContent(chapterId)
+                if (content.isBlank()) {
+                    snackbarHostState.showSnackbar(
+                        "A última versão salva deste capítulo está vazia. Salve o texto antes de exportar."
+                    )
+                    return@launch
+                }
+                val success = EpubExporter.exportToEpub(context, uri, chapterTitle, content)
+                snackbarHostState.showSnackbar(
+                    if (success) "EPUB exportado com sucesso." else "Não foi possível gerar o EPUB."
+                )
             }
         }
     }
@@ -91,6 +117,7 @@ fun ChaptersScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { createDialogOpen = true },
@@ -145,13 +172,21 @@ fun ChaptersScreen(
                                 onRename = { chapterToRename = chapter },
                                 onDelete = { chapterToDelete = chapter },
                                 onExportPdf = {
-                                    chapterToExportPdf = chapter
-                                    val safeTitle = chapter.title.replace(Regex("[^A-Za-z0-9_-]+"), "_")
+                                    pdfChapterId = chapter.id
+                                    pdfChapterTitle = chapter.title
+                                    val safeTitle = chapter.title
+                                        .replace(Regex("[^A-Za-z0-9_-]+"), "_")
+                                        .trim('_')
+                                        .ifBlank { "capitulo" }
                                     pdfExportLauncher.launch("${safeTitle}.pdf")
                                 },
                                 onExportEpub = {
-                                    chapterToExportEpub = chapter
-                                    val safeTitle = chapter.title.replace(Regex("[^A-Za-z0-9_-]+"), "_")
+                                    epubChapterId = chapter.id
+                                    epubChapterTitle = chapter.title
+                                    val safeTitle = chapter.title
+                                        .replace(Regex("[^A-Za-z0-9_-]+"), "_")
+                                        .trim('_')
+                                        .ifBlank { "capitulo" }
                                     epubExportLauncher.launch("${safeTitle}.epub")
                                 }
                             )

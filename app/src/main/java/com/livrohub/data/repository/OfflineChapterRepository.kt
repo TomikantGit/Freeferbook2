@@ -41,6 +41,9 @@ class OfflineChapterRepository(
     override fun observeLatestVersion(chapterId: Long): Flow<ChapterVersion?> =
         versionDao.observeLatestVersion(chapterId).map { it?.toDomain() }
 
+    override suspend fun getLatestVersion(chapterId: Long): ChapterVersion? =
+        versionDao.getLatestVersion(chapterId)?.toDomain()
+
     /**
      * Cria um novo capítulo com uma versão inicial dentro de uma transação Room.
      *

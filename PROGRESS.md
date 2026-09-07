@@ -242,6 +242,17 @@
 - Cada no mostra somente titulo, descricao e indicador de expansao; suas opcoes internas so sao compostas apos o usuario tocar no no.
 - Removido o preview global fixo do topo das configuracoes para que nenhuma opcao fique exposta antes de o usuario escolher uma categoria.
 
+## Modulo 19 — Correcao de exportacao PDF/EPUB (2026-09-07)
+
+- A exportacao de capitulos passou a buscar a ultima versao salva por consulta direta ao Room (`getLatestVersion`), sem depender de uma coleta temporaria de `Flow`.
+- O estado do capitulo pendente de exportacao passou a usar valores `rememberSaveable` (ID e titulo), evitando perda do contexto caso o Android recrie a Activity enquanto o seletor de arquivos estiver aberto.
+- PDF e EPUB agora informam explicitamente quando a ultima versao salva esta vazia e exibem Snackbar de sucesso/falha apos a tentativa de exportacao.
+- Criado `MarkdownParser.parseToPlainText` para garantir que o PDF preserve todo o texto visivel ao remover apenas os marcadores Markdown suportados.
+- A geracao HTML do EPUB foi refeita por blocos, com escape XHTML e suporte a titulos, citacoes, negrito, italico e riscado sem descartar o texto comum.
+- `EpubExporter` agora valida stream de saida e configura corretamente o tamanho da entrada `mimetype` armazenada sem compressao.
+- `PdfExporter` fecha `PdfDocument` em todos os caminhos e evita pagina sem linha renderizavel.
+- Adicionado `MarkdownParserExportTest` cobrindo preservacao de texto no fluxo PDF e presenca de texto/formatacao no XHTML usado pelo EPUB.
+
 ## Observacoes
 
 - O ambiente local atual possui Java/Android SDK suficientes para `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` em modo offline.

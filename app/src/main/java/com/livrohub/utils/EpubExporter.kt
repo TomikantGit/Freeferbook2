@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.OutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -17,13 +16,17 @@ object EpubExporter {
         contentMarkdown: String
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                ZipOutputStream(outputStream).use { zos ->
+            if (contentMarkdown.isBlank()) return@withContext false
+            val outputStream = context.contentResolver.openOutputStream(uri)
+                ?: return@withContext false
+            outputStream.use { stream ->
+                ZipOutputStream(stream).use { zos ->
                     // 1. mimetype (must be first, uncompressed)
                     val mimetypeEntry = ZipEntry("mimetype").apply {
                         method = ZipEntry.STORED
                         val bytes = "application/epub+zip".toByteArray()
                         size = bytes.size.toLong()
+                        compressedSize = bytes.size.toLong()
                         crc = computeCrc(bytes)
                     }
                     zos.putNextEntry(mimetypeEntry)

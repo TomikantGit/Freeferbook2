@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.firstOrNull
 
 /**
  * Estado da tela de lista de capitulos.
@@ -80,7 +79,7 @@ class ChaptersViewModel(
     }
 
     suspend fun getChapterContent(chapterId: Long): String {
-        val latestVersion = repository.observeLatestVersion(chapterId).firstOrNull()
+        val latestVersion = repository.getLatestVersion(chapterId)
         return latestVersion?.content ?: ""
     }
 }
