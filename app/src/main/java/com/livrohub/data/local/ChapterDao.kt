@@ -18,6 +18,10 @@ interface ChapterDao {
     @Query("SELECT * FROM chapters WHERE book_id = :bookId ORDER BY order_index ASC")
     fun observeChapters(bookId: Long): Flow<List<ChapterEntity>>
 
+    /** Busca diretamente todos os capítulos de um livro para exportação/importação. */
+    @Query("SELECT * FROM chapters WHERE book_id = :bookId ORDER BY order_index ASC")
+    suspend fun getChapters(bookId: Long): List<ChapterEntity>
+
     /** Observa um capítulo específico. Retorna null se não encontrado. */
     @Query("SELECT * FROM chapters WHERE id = :chapterId")
     fun observeChapter(chapterId: Long): Flow<ChapterEntity?>

@@ -116,7 +116,10 @@ private fun LibraryRoute(
 ) {
     val viewModel: LibraryViewModel = viewModel(
         factory = viewModelFactory {
-            LibraryViewModel(dependencies.bookRepository)
+            LibraryViewModel(
+                repository = dependencies.bookRepository,
+                archiveManager = dependencies.bookArchiveManager
+            )
         }
     )
     LibraryScreen(

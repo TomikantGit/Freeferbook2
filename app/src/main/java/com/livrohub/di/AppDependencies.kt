@@ -1,5 +1,6 @@
 package com.livrohub.di
 
+import com.livrohub.data.archive.BookArchiveManager
 import com.livrohub.domain.repository.BookRepository
 import com.livrohub.domain.repository.ChapterRepository
 import com.livrohub.domain.repository.CharacterRepository
@@ -23,4 +24,5 @@ interface AppDependencies {
     val imageRepository: ImageRepository
     val locationRepository: LocationRepository
     val chapterMentionSynchronizer: ChapterMentionSynchronizer
+    val bookArchiveManager: BookArchiveManager
 }

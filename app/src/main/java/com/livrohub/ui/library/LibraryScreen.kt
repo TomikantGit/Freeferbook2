@@ -1,5 +1,7 @@
 package com.livrohub.ui.library
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,11 +11,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.livrohub.R
+import com.livrohub.data.archive.BookArchiveManager
 import com.livrohub.domain.model.BookWithStats
 import com.livrohub.ui.components.LivroHubButton
 import com.livrohub.ui.components.LivroHubCard
@@ -41,6 +47,33 @@ fun LibraryScreen(
     onOpenSettings: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var pendingExportBookId by rememberSaveable { mutableStateOf<Long?>(null) }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument(BookArchiveManager.MIME_TYPE)
+    ) { uri ->
+        val bookId = pendingExportBookId
+        pendingExportBookId = null
+        if (uri != null && bookId != null) {
+            viewModel.exportBook(bookId, uri)
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.importBook(uri)
+        }
+    }
+
+    LaunchedEffect(uiState.archiveMessage) {
+        uiState.archiveMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearArchiveMessage()
+        }
+    }
 
     LibraryContent(
         uiState = uiState,
@@ -48,7 +81,13 @@ fun LibraryScreen(
         onCreateBook = viewModel::createBook,
         onRenameBook = viewModel::renameBook,
         onDeleteBook = viewModel::deleteBook,
-        onOpenSettings = onOpenSettings
+        onOpenSettings = onOpenSettings,
+        onImportBook = { importLauncher.launch(arrayOf("*/*")) },
+        onExportBook = { book ->
+            pendingExportBookId = book.book.id
+            exportLauncher.launch(BookArchiveManager.suggestedFileName(book.book.title))
+        },
+        snackbarHostState = snackbarHostState
     )
 }
 
@@ -60,19 +99,53 @@ private fun LibraryContent(
     onCreateBook: (String) -> Unit,
     onRenameBook: (Long, String) -> Unit,
     onDeleteBook: (Long) -> Unit,
-    onOpenSettings: () -> Unit
+    onOpenSettings: () -> Unit,
+    onImportBook: () -> Unit,
+    onExportBook: (BookWithStats) -> Unit,
+    snackbarHostState: SnackbarHostState
 ) {
     var createDialogOpen by remember { mutableStateOf(false) }
     var bookToRename by remember { mutableStateOf<BookWithStats?>(null) }
     var bookToDelete by remember { mutableStateOf<BookWithStats?>(null) }
+    var appMenuOpen by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "LivroHub", style = LivroHubTheme.typography.titleLarge) },
+                title = { Text(text = stringResource(R.string.app_name), style = LivroHubTheme.typography.titleLarge) },
                 actions = {
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Configurações")
+                    Box {
+                        IconButton(onClick = { appMenuOpen = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "Opções da biblioteca")
+                        }
+                        DropdownMenu(
+                            expanded = appMenuOpen,
+                            onDismissRequest = { appMenuOpen = false },
+                            modifier = Modifier.background(LivroHubTheme.colors.surface)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Importar livro", color = LivroHubTheme.colors.onSurface) },
+                                enabled = !uiState.isArchiveBusy,
+                                onClick = {
+                                    appMenuOpen = false
+                                    onImportBook()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Configurações", color = LivroHubTheme.colors.onSurface) },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Settings,
+                                        contentDescription = null,
+                                        tint = LivroHubTheme.colors.onSurfaceVariant
+                                    )
+                                },
+                                onClick = {
+                                    appMenuOpen = false
+                                    onOpenSettings()
+                                }
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -84,13 +157,16 @@ private fun LibraryContent(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { createDialogOpen = true },
+                onClick = {
+                    if (!uiState.isArchiveBusy) createDialogOpen = true
+                },
                 containerColor = LivroHubTheme.colors.accent,
                 contentColor = LivroHubTheme.colors.onAccent
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Criar livro")
             }
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = LivroHubTheme.colors.background
     ) { innerPadding ->
         Box(
@@ -137,12 +213,23 @@ private fun LibraryContent(
                             BookRow(
                                 bookWithStats = statBook,
                                 onOpen = { onOpenBook(statBook.book.id) },
+                                onExport = { onExportBook(statBook) },
                                 onRename = { bookToRename = statBook },
-                                onDelete = { bookToDelete = statBook }
+                                onDelete = { bookToDelete = statBook },
+                                archiveBusy = uiState.isArchiveBusy
                             )
                         }
                     }
                 }
+            }
+
+            if (uiState.isArchiveBusy) {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.TopCenter),
+                    color = LivroHubTheme.colors.primary
+                )
             }
         }
     }
@@ -230,8 +317,10 @@ private fun EmptyLibrary(
 private fun BookRow(
     bookWithStats: BookWithStats,
     onOpen: () -> Unit,
+    onExport: () -> Unit,
     onRename: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    archiveBusy: Boolean
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val formattedDate = remember(bookWithStats.book.createdAt) {
@@ -285,7 +374,16 @@ private fun BookRow(
                     modifier = Modifier.background(LivroHubTheme.colors.surface)
                 ) {
                     DropdownMenuItem(
+                        text = { Text("Exportar livro (.zip)", color = LivroHubTheme.colors.onSurface) },
+                        enabled = !archiveBusy,
+                        onClick = {
+                            menuOpen = false
+                            onExport()
+                        }
+                    )
+                    DropdownMenuItem(
                         text = { Text("Renomear", color = LivroHubTheme.colors.onSurface) },
+                        enabled = !archiveBusy,
                         leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = LivroHubTheme.colors.onSurfaceVariant) },
                         onClick = {
                             menuOpen = false
@@ -294,6 +392,7 @@ private fun BookRow(
                     )
                     DropdownMenuItem(
                         text = { Text("Excluir", color = LivroHubTheme.colors.error) },
+                        enabled = !archiveBusy,
                         leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = LivroHubTheme.colors.error) },
                         onClick = {
                             menuOpen = false

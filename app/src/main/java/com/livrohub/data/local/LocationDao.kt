@@ -17,6 +17,9 @@ interface LocationDao {
     @Query("SELECT * FROM locations WHERE book_id = :bookId ORDER BY name ASC")
     fun getLocationsByBook(bookId: Long): Flow<List<LocationEntity>>
 
+    @Query("SELECT * FROM locations WHERE book_id = :bookId ORDER BY name ASC")
+    suspend fun getLocationsByBookDirect(bookId: Long): List<LocationEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertLocation(location: LocationEntity): Long
 

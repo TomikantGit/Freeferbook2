@@ -126,11 +126,10 @@
 ## Proximos passos pendentes
 
 1. Testar compilacao e execucao no Android Studio com rede funcional.
-2. Implementar importacao de livros/manuscritos.
-3. Reordenacao de capitulos (drag & drop).
-4. Busca textual dentro dos capitulos.
-5. Substituir `fallbackToDestructiveMigration()` por migrations adequadas.
-6. Expandir testes automatizados.
+2. Reordenacao de capitulos (drag & drop).
+3. Busca textual dentro dos capitulos.
+4. Substituir `fallbackToDestructiveMigration()` por migrations adequadas.
+5. Expandir testes automatizados.
 
 ## Modulo 10 — Formatacao contextual do editor (2026-09-04)
 
@@ -272,6 +271,19 @@
 - Salvar versao, visao do capitulo, revisao, imagens e historico passaram para o menu de overflow, mantendo os mesmos estados de habilitacao.
 - O titulo do capitulo e o texto de ultima versao foram limitados a uma linha com reticencias quando necessario, evitando quebra por caractere como ocorria em aparelhos estreitos.
 - `compileDebugKotlin`, `testDebugUnitTest`, `assembleDebug` e `git diff --check` executados com sucesso apos a alteracao.
+
+## Modulo 22 — Backup/importacao de livro inteiro (2026-09-07)
+
+- Criado `BookArchiveManager`, integrado ao `AppDependencies`, para exportar e importar um livro completo em um unico arquivo ZIP.
+- O backup usa `manifest.json` versionado (`freeferbook-book-backup`, `schemaVersion = 1`) e preserva titulo/data do livro, capitulos, ordem, todo o historico de versoes, personagens, locais e imagens de referencia.
+- Imagens locais acessiveis por `content://`, `file://` ou caminho local sao incorporadas em `media/`; URLs web continuam preservadas como referencia externa.
+- A importacao gera novos IDs Room e reconstrói as relacoes dentro de transacao, sem sobrescrever livros existentes.
+- Adicionadas consultas diretas aos DAOs para montar snapshots consistentes sem depender de `Flow` durante o backup.
+- A Biblioteca ganhou menu de overflow com `Importar livro`; cada card de livro ganhou `Exportar livro (.zip)`.
+- Operacoes longas exibem progresso e retornam resultado via Snackbar; criar/renomear/excluir/exportar fica bloqueado enquanto um backup esta em andamento.
+- O importador valida o conteudo do arquivo, rejeita ZIPs sem manifesto Freeferbook e detecta RAR/7z com mensagem explicita de formato nao suportado.
+- O leitor de ZIP nao extrai nomes de caminho fornecidos pelo arquivo: midias sao copiadas para nomes gerados pelo app e limitadas por tamanho, reduzindo risco de zip-slip/zip bomb.
+- `OfflineBookRepositoryTest` foi adaptado para a nova consulta direta de `BookDao`; adicionados testes de sanitizacao do nome de arquivo de backup.
 
 ## Observacoes
 

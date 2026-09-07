@@ -39,6 +39,10 @@ interface BookDao {
     @Query("SELECT * FROM books WHERE id = :bookId")
     fun observeBook(bookId: Long): Flow<BookEntity?>
 
+    /** Busca um livro diretamente por ID para operações pontuais como backup. */
+    @Query("SELECT * FROM books WHERE id = :bookId LIMIT 1")
+    suspend fun getBook(bookId: Long): BookEntity?
+
     /**
      * Observa estatísticas agregadas de todos os livros.
      *

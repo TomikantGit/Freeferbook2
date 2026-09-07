@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
+import com.livrohub.data.archive.BookArchiveManager
 import com.livrohub.data.local.LivroHubDatabase
 import com.livrohub.data.repository.OfflineBookRepository
 import com.livrohub.data.repository.OfflineChapterRepository
@@ -74,6 +75,11 @@ class AppContainer(context: Context) : AppDependencies {
             characterRepository = characterRepository,
             locationRepository = locationRepository
         )
+    }
+
+    /** Serviço de backup/restauração de um livro inteiro em arquivo ZIP. */
+    override val bookArchiveManager: BookArchiveManager by lazy {
+        BookArchiveManager(appContext, database)
     }
 
     /** Repositório para preferências do usuário (tema, fonte, etc). */

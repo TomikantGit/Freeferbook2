@@ -16,6 +16,10 @@ interface ImageDao {
     @Query("SELECT * FROM images WHERE book_id = :bookId ORDER BY created_at DESC")
     fun observeImages(bookId: Long): Flow<List<ImageEntity>>
 
+    /** Busca diretamente imagens de referência para o backup completo. */
+    @Query("SELECT * FROM images WHERE book_id = :bookId ORDER BY created_at ASC")
+    suspend fun getImages(bookId: Long): List<ImageEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(image: ImageEntity): Long
 

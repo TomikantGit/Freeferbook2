@@ -80,6 +80,9 @@ class OfflineBookRepositoryTest {
         override fun observeBook(bookId: Long): Flow<BookEntity?> =
             flowOf(books.firstOrNull { it.id == bookId })
 
+        override suspend fun getBook(bookId: Long): BookEntity? =
+            books.firstOrNull { it.id == bookId }
+
         override fun observeBooksStats(): Flow<List<BookStatsDto>> = flowOf(stats)
 
         override suspend fun insert(book: BookEntity): Long {

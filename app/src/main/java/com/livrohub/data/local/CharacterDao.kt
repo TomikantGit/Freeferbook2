@@ -20,6 +20,10 @@ interface CharacterDao {
     @Query("SELECT * FROM characters WHERE book_id = :bookId ORDER BY name ASC")
     fun observeCharactersByBook(bookId: Long): Flow<List<CharacterEntity>>
 
+    /** Busca diretamente personagens para compor backups completos do livro. */
+    @Query("SELECT * FROM characters WHERE book_id = :bookId ORDER BY name ASC")
+    suspend fun getCharactersByBook(bookId: Long): List<CharacterEntity>
+
     /** Insere ou substitui um personagem (upsert via REPLACE). */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCharacter(character: CharacterEntity): Long

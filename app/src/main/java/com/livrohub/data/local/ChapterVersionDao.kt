@@ -19,6 +19,10 @@ interface ChapterVersionDao {
     @Query("SELECT * FROM chapter_versions WHERE chapter_id = :chapterId ORDER BY sequence_number DESC")
     fun observeVersions(chapterId: Long): Flow<List<ChapterVersionEntity>>
 
+    /** Busca diretamente todo o histórico de um capítulo em ordem cronológica. */
+    @Query("SELECT * FROM chapter_versions WHERE chapter_id = :chapterId ORDER BY sequence_number ASC")
+    suspend fun getVersions(chapterId: Long): List<ChapterVersionEntity>
+
     /** Observa apenas a última versão (mais recente) de um capítulo. */
     @Query("SELECT * FROM chapter_versions WHERE chapter_id = :chapterId ORDER BY sequence_number DESC LIMIT 1")
     fun observeLatestVersion(chapterId: Long): Flow<ChapterVersionEntity?>

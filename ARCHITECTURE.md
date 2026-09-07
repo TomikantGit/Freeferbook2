@@ -26,6 +26,8 @@ graph TB
     DATA --> ROOM["Room DAOs / Database"]
     DATA --> DS["DataStore"]
     UI --> UPDATE["Updater de teste isolado"]
+    VM --> ARCHIVE["BookArchiveManager"]
+    ARCHIVE --> ROOM
 ```
 
 ### UI
@@ -46,7 +48,7 @@ Contém modelos, contratos de repositório e regras reutilizáveis, como:
 
 ### Data
 
-Implementações offline com Room/DataStore e serviços Android específicos, como o updater de APK de teste.
+Implementações offline com Room/DataStore e serviços Android específicos, como o updater de APK de teste e o backup portátil de livros.
 
 ## Injeção de dependências
 
@@ -61,7 +63,8 @@ LivroHubApp
       ├─ LocationRepository
       ├─ ImageRepository
       ├─ SettingsRepository
-      └─ ChapterMentionSynchronizer
+      ├─ ChapterMentionSynchronizer
+      └─ BookArchiveManager
 ```
 
 As dependências são `lazy`, então abrir a Home não força a criação/abertura do banco Room. `MainActivity` injeta apenas `AppDependencies` em `LivroHubAppRoot`, evitando aumentar a assinatura do composable raiz a cada novo serviço.
@@ -173,6 +176,35 @@ SettingsScreen
 
 O canal público de testes usa o package `com.livrohub.test`, separado do app local `com.livrohub`.
 
+## Backup completo de livros
+
+`BookArchiveManager` implementa importação/exportação de um livro inteiro sem alterar o schema Room.
+
+Formato atual:
+
+```text
+backup.zip
+├─ manifest.json
+└─ media/
+   └─ ... imagens locais acessíveis no momento da exportação
+```
+
+O `manifest.json` usa `format = freeferbook-book-backup` e `schemaVersion = 1`. O número da versão do formato é independente da versão do banco Room e deve ser incrementado somente quando o contrato do backup mudar de forma incompatível.
+
+O backup inclui:
+
+- livro e timestamp original;
+- capítulos e ordem;
+- todas as versões salvas de cada capítulo;
+- personagens;
+- locais;
+- imagens de referência;
+- cópia de mídia local quando o Android ainda consegue abrir a URI.
+
+Na importação, IDs são regenerados e as relações internas reconstruídas dentro de uma transação. O livro importado nunca sobrescreve outro livro existente. Entradas de mídia só são lidas do namespace `media/`, com limites de tamanho, evitando extração arbitrária de caminhos do ZIP.
+
+ZIP é o formato de contêiner suportado. Uma extensão customizada pode ser usada desde que o conteúdo continue sendo ZIP. RAR/7z são detectados e rejeitados explicitamente em vez de serem interpretados como backup válido.
+
 ## Fluxos reativos
 
 Padrão de leitura:
@@ -209,6 +241,7 @@ com.livrohub/
 │  ├─ AppDependencies.kt
 │  └─ AppContainer.kt
 ├─ data/
+│  ├─ archive/
 │  ├─ local/
 │  ├─ repository/
 │  └─ update/
@@ -241,3 +274,4 @@ com.livrohub/
 7. Mudança de banco: criar migration Room explícita e teste de migration antes de incrementar schema.
 8. Feature online: manter opt-in e desacoplada das funções de escrita/biblioteca offline.
 9. Toda refatoração relevante deve fechar com `testDebugUnitTest` + `assembleDebug`.
+10. Mudança no formato de backup: manter compatibilidade retroativa quando possível e incrementar `schemaVersion` quando necessário.
