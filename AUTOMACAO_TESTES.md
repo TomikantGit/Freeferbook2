@@ -37,11 +37,19 @@ O APK mais recente fica sempre em:
 
 ## Assinatura das builds de teste
 
-As builds automatizadas usam uma keystore dedicada de teste. A keystore e suas credenciais ficam empacotadas exclusivamente no GitHub Actions Secret `TEST_SIGNING_BUNDLE`. Nenhuma chave de assinatura é armazenada no código, em Releases ou em caches compartilhados do repositório.
+O canal público de testes usa o pacote separado `com.livrohub.test`. Isso evita trocar a assinatura do app local `com.livrohub` e elimina o risco de perder os livros existentes ao testar a automação.
+
+As builds automatizadas usam uma keystore dedicada de teste. Não copie o valor do Secret manualmente. Execute uma vez:
+
+```powershell
+.\scripts\configurar-assinatura-teste-publica.ps1
+```
+
+Esse script gera a chave, guarda o backup somente em `.private/` e cadastra `TEST_SIGNING_BUNDLE` pelo GitHub CLI sem imprimir o valor.
 
 O workflow desempacota esse Secret apenas no diretório temporário do runner, mascara as credenciais nos logs e o Gradle as lê por variáveis de ambiente. Builds locais continuam usando a assinatura debug padrão quando essas variáveis não existem.
 
-Uma build local pode ter assinatura diferente da build automatizada. Nesse caso, a primeira instalação do canal automatizado pode exigir remover a build local anterior; depois disso, as builds do GitHub usam a mesma assinatura de teste.
+Como `com.livrohub.test` é um aplicativo separado, ele pode coexistir com a instalação local `com.livrohub`. A primeira instalação do canal automatizado é independente; depois disso, as builds do GitHub atualizam a própria instalação de teste.
 
 ## Atualização dentro do app
 

@@ -8,6 +8,10 @@ val testKeystorePath = providers.environmentVariable("TEST_KEYSTORE_PATH").orNul
 val testKeystorePassword = providers.environmentVariable("TEST_KEYSTORE_PASSWORD").orNull
 val testKeyAlias = providers.environmentVariable("TEST_KEY_ALIAS").orNull
 val testKeyPassword = providers.environmentVariable("TEST_KEY_PASSWORD").orNull
+val publicTestBuild = providers.gradleProperty("publicTestBuild")
+    .orNull
+    ?.toBooleanStrictOrNull()
+    ?: false
 val testSigningConfigured = listOf(
     testKeystorePath,
     testKeystorePassword,
@@ -45,7 +49,13 @@ android {
 
     buildTypes {
         getByName("debug") {
-            signingConfigs.findByName("test")?.let { signingConfig = it }
+            if (publicTestBuild) {
+                applicationIdSuffix = ".test"
+                signingConfig = null
+                resValue("string", "app_name", "Freeferbook Test")
+            } else {
+                signingConfigs.findByName("test")?.let { signingConfig = it }
+            }
         }
     }
 

@@ -86,13 +86,38 @@ jobs:
       - name: Compilar APK de teste
         run: |
           ./gradlew assembleDebug --stacktrace \
+            -PpublicTestBuild=true \
             -PtestVersionCode="${{ steps.version.outputs.code }}" \
             -PtestVersionName="${{ steps.version.outputs.name }}"
 
-      - name: Preparar canal público de atualização
+      - name: Assinar APK público de teste
         run: |
           mkdir -p update-site
-          cp app/build/outputs/apk/debug/app-debug.apk update-site/freeferbook-test.apk
+
+          BUILD_TOOLS_DIR="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          ZIPALIGN="$BUILD_TOOLS_DIR/zipalign"
+          APKSIGNER="$BUILD_TOOLS_DIR/apksigner"
+
+          APK_INPUT="$(find app/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' | head -1)"
+          if [ -z "$APK_INPUT" ]; then
+            echo "::error::APK de debug não encontrado."
+            exit 1
+          fi
+
+          "$ZIPALIGN" -f -p 4 "$APK_INPUT" update-site/freeferbook-test-aligned.apk
+          "$APKSIGNER" sign \
+            --ks "$TEST_KEYSTORE_PATH" \
+            --ks-key-alias "$TEST_KEY_ALIAS" \
+            --ks-pass env:TEST_KEYSTORE_PASSWORD \
+            --key-pass env:TEST_KEY_PASSWORD \
+            --out update-site/freeferbook-test.apk \
+            update-site/freeferbook-test-aligned.apk
+
+          "$APKSIGNER" verify --verbose --print-certs update-site/freeferbook-test.apk
+          rm update-site/freeferbook-test-aligned.apk
+
+      - name: Preparar canal público de atualização
+        run: |
 
           APK_SHA256="$(sha256sum update-site/freeferbook-test.apk | awk '{print $1}')"
           SHORT_SHA="${GITHUB_SHA:0:7}"

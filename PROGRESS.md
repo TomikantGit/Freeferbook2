@@ -204,6 +204,8 @@
 - Removidos dos documentos caminhos absolutos vinculados ao usuario do Windows e referencias aos hashes do historico privado anterior.
 - Auditoria do snapshot atual nao encontrou e-mails, caminhos absolutos de perfis locais do Windows nem padroes fortes de tokens/chaves no conteudo versionado.
 - `compileDebugKotlin --offline`, `assembleDebug --offline` e `signingReport --offline` executados com sucesso durante a migracao da assinatura.
+- O canal automatizado de teste passou a usar `applicationId` separado (`com.livrohub.test`), preservando o app local `com.livrohub` e seus dados mesmo quando a chave publica de testes for trocada.
+- Adicionado `scripts/configurar-assinatura-teste-publica.ps1`, que gera uma chave dedicada e cadastra `TEST_SIGNING_BUNDLE` via GitHub CLI sem imprimir o segredo.
 
 ## Observacoes
 
