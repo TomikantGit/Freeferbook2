@@ -1,13 +1,12 @@
 package com.livrohub.ui.diff
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.livrohub.domain.diff.DiffLine
 import com.livrohub.domain.diff.DiffLineType
 import com.livrohub.domain.diff.TextDiffEngine
 import com.livrohub.domain.repository.ChapterRepository
-import kotlinx.coroutines.flow.SharingStarted
+import com.livrohub.ui.common.WhileUiSubscribed
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -64,25 +63,7 @@ class DiffViewModel(
         )
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
+        started = WhileUiSubscribed,
         initialValue = DiffUiState()
     )
-}
-
-class DiffViewModelFactory(
-    private val chapterId: Long,
-    private val currentContent: String,
-    private val repository: ChapterRepository
-) : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(DiffViewModel::class.java)) {
-            return DiffViewModel(
-                chapterId = chapterId,
-                currentContent = currentContent,
-                repository = repository
-            ) as T
-        }
-        throw IllegalArgumentException("ViewModel desconhecido: ${modelClass.name}")
-    }
 }

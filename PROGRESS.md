@@ -207,14 +207,25 @@
 - O canal automatizado de teste passou a usar `applicationId` separado (`com.livrohub.test`), preservando o app local `com.livrohub` e seus dados mesmo quando a chave publica de testes for trocada.
 - Adicionado `scripts/configurar-assinatura-teste-publica.ps1`, que gera uma chave dedicada e cadastra `TEST_SIGNING_BUNDLE` via GitHub CLI sem imprimir o segredo.
 
+## Modulo 16 — Refatoracao estrutural para extensibilidade (2026-09-07)
+
+- Criado `AppDependencies`; `MainActivity` passou a injetar um unico grafo de dependencias em `LivroHubAppRoot`, em vez de expandir a assinatura do composable a cada novo repositorio.
+- `AppContainer` passou a inicializar banco, repositorios e servicos com `lazy`, reduzindo trabalho antecipado na inicializacao do app.
+- Navegacao interna de capitulos foi convertida de varios booleanos independentes para `AppNavigationState` + `ChapterScreen`, tornando as subtelas mutuamente exclusivas.
+- O `Saver` da navegacao deixou de guardar conteudos grandes de diff no Bundle; textos de capitulo sao estado transitorio para evitar `TransactionTooLargeException`.
+- `LivroHubAppRoot` foi dividido em composables de rota (`LibraryRoute`, `SettingsRoute`, `BookOverviewRoute`, `ChapterRoute`) e passou a compartilhar uma unica instancia de `EditorViewModel` entre editor, preview e revisao.
+- Criado `ViewModelSupport.kt` com `viewModelFactory { ... }` generica e `WhileUiSubscribed`; removidas factories repetitivas e timeouts duplicados dos ViewModels.
+- Fluxo de atualizacao de teste saiu de `SettingsScreen` e foi isolado em `TestUpdateSection` + `TestUpdateViewModel`, preservando estado durante mudancas de configuracao.
+- Criado `ChapterMentionSynchronizer` no dominio; deteccao e sincronizacao de mencoes de personagens/locais deixaram de ser responsabilidade direta do `EditorViewModel`.
+- `OfflineBookRepository` passou a depender diretamente de `BookDao`, melhorando testabilidade e reduzindo acoplamento com `LivroHubDatabase`.
+- `OfflineBookRepositoryTest` legado foi reescrito para a arquitetura atual. A suite completa voltou a compilar e executar.
+- Adicionados testes para `AppNavigationState` e `ChapterMentionSynchronizer`; ajustado teste de diff para refletir a ordem real de linhas alteradas do motor atual.
+- Suite final: **22 testes, 0 falhas, 0 erros**.
+- Icones de retorno/revisao deprecated foram migrados para variantes `AutoMirrored`.
+- `ARCHITECTURE.md` foi reescrito para documentar schema v6, navegacao tipada, DI, updater isolado e regras para novas features.
+
 ## Observacoes
 
-- O terminal desta sessao nao encontrou Java, Gradle nem Android SDK instalados ou configurados no PATH. Por isso, a compilacao local ainda nao foi verificada aqui.
-- O projeto deve ser aberto no Android Studio para baixar dependencias e compilar com o SDK Android configurado.
-- A tentativa de baixar `gradle-wrapper.jar` falhou por erro TLS/credenciais no ambiente Windows desta sessao. O arquivo ainda precisa ser gerado pelo Android Studio/Gradle ou baixado quando a rede local estiver funcionando.
-- `local.properties` nao foi criado porque nenhum Android SDK foi encontrado nos caminhos comuns da maquina. O Android Studio normalmente cria esse arquivo ao abrir o projeto.
-- Em 2026-07-06, foi tentada a instalacao portatil de JDK 17 e Gradle 8.7 dentro de `work/tools`, mas downloads HTTPS falharam por erro TLS/credenciais do Windows. `winget` existe na maquina, porem sua execucao tambem foi bloqueada dentro do ambiente Codex.
-- Se o Gradle falhar tentando escrever no cache global `~\.gradle`, usar `run-gradle-local.bat` para forcar `GRADLE_USER_HOME` local ao projeto.
-- O erro mais recente do Gradle foi `Espaco insuficiente no disco` ao baixar dependencias para `work\.gradle-home`. Antes de tentar compilar novamente, liberar espaco no disco `C:` e apagar o cache parcial `work\.gradle-home`.
-- Depois, `gradle-wrapper.jar` apareceu no projeto e o Gradle manual em `C:\Gradle\gradle-8.7` foi confirmado funcionando com Java 17.
-- A tentativa de `assembleDebug` avancou ate resolucao de dependencias, mas falhou porque a rede da sessao Codex bloqueou downloads Maven/Google (`Permission denied: getsockopt`). Isso nao e erro de codigo do app; o Android Studio ou um terminal com rede precisa baixar as dependencias.
+- O ambiente local atual possui Java/Android SDK suficientes para `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` em modo offline.
+- O principal risco estrutural ainda pendente e `fallbackToDestructiveMigration()` no Room. Antes de evoluir o schema alem da v6 para distribuicao real, implementar migrations explicitas.
+- O canal publico `com.livrohub.test` permanece separado do package local `com.livrohub` e deve ser usado para ciclos rapidos de teste/atualizacao.

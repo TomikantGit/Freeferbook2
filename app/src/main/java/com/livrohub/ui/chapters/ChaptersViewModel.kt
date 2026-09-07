@@ -1,11 +1,10 @@
 package com.livrohub.ui.chapters
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.livrohub.domain.model.Chapter
 import com.livrohub.domain.repository.ChapterRepository
-import kotlinx.coroutines.flow.SharingStarted
+import com.livrohub.ui.common.WhileUiSubscribed
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -52,7 +51,7 @@ class ChaptersViewModel(
         }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
+            started = WhileUiSubscribed,
             initialValue = ChaptersUiState()
         )
 
@@ -83,18 +82,5 @@ class ChaptersViewModel(
     suspend fun getChapterContent(chapterId: Long): String {
         val latestVersion = repository.observeLatestVersion(chapterId).firstOrNull()
         return latestVersion?.content ?: ""
-    }
-}
-
-class ChaptersViewModelFactory(
-    private val bookId: Long,
-    private val repository: ChapterRepository
-) : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(ChaptersViewModel::class.java)) {
-            return ChaptersViewModel(bookId, repository) as T
-        }
-        throw IllegalArgumentException("ViewModel desconhecido")
     }
 }

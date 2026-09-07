@@ -1,9 +1,9 @@
 package com.livrohub.ui.editor
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.livrohub.domain.repository.ChapterRepository
+import com.livrohub.domain.worldbuilding.ChapterMentionSynchronizer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.TextRange
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -47,15 +46,13 @@ data class EditorUiState(
  * @param chapterId ID do capítulo sendo editado.
  * @param bookId ID do livro ao qual o capítulo pertence.
  * @param repository Repositório para operações de capítulo e versões.
- * @param characterRepository Repositório para operações de personagens.
- * @param locationRepository Repositório para operações de locais.
+ * @param mentionSynchronizer Serviço de domínio que sincroniza referências de worldbuilding.
  */
 class EditorViewModel(
     private val chapterId: Long,
     private val bookId: Long,
     private val repository: ChapterRepository,
-    private val characterRepository: com.livrohub.domain.repository.CharacterRepository,
-    private val locationRepository: com.livrohub.domain.repository.LocationRepository
+    private val mentionSynchronizer: ChapterMentionSynchronizer
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EditorUiState())
@@ -153,8 +150,11 @@ class EditorViewModel(
                         lastSavedNotice = "Versao salva."
                     )
                 }
-                updateCharactersAppearances(content, currentTitle)
-                updateLocationsAppearances(content, currentTitle)
+                mentionSynchronizer.synchronize(
+                    bookId = bookId,
+                    chapterTitle = currentTitle,
+                    content = content
+                )
             }.onFailure { error ->
                 _uiState.update { current ->
                     current.copy(
@@ -165,100 +165,8 @@ class EditorViewModel(
             }
         }
     }
-    
-    private fun updateCharactersAppearances(content: String, chapterTitle: String) {
-        if (content.isBlank() || chapterTitle.isBlank()) return
-        
-        viewModelScope.launch {
-            try {
-                // Pega a lista atual de personagens deste livro
-                val characters = characterRepository.observeCharacters(bookId).first()
-                
-                for (character in characters) {
-                    val nameMatch = character.name.isNotBlank() && content.contains(character.name, ignoreCase = true)
-                    val surnameMatch = character.surnames.isNotBlank() && character.surnames.split(",").any { 
-                        it.trim().isNotBlank() && content.contains(it.trim(), ignoreCase = true) 
-                    }
-                    
-                    if (nameMatch || surnameMatch) {
-                        val currentChapters = character.chapters
-                        // Se o capítulo ainda não está na lista de capítulos do personagem, adiciona.
-                        // Usamos verificação simples de string.
-                        if (!currentChapters.contains(chapterTitle, ignoreCase = true)) {
-                            val newChapters = if (currentChapters.isBlank()) {
-                                chapterTitle
-                            } else {
-                                "$currentChapters, $chapterTitle"
-                            }
-                            
-                            characterRepository.saveCharacter(
-                                character.copy(chapters = newChapters)
-                            )
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                // Ignora falhas na atualização de personagens (non-critical path)
-            }
-        }
-    }
-
-    private fun updateLocationsAppearances(content: String, chapterTitle: String) {
-        if (content.isBlank() || chapterTitle.isBlank()) return
-        
-        viewModelScope.launch {
-            try {
-                // Pega a lista atual de locais deste livro
-                val locations = locationRepository.observeLocations(bookId).first()
-                
-                for (location in locations) {
-                    val nameMatch = location.name.isNotBlank() && content.contains(location.name, ignoreCase = true)
-                    val descMatch = location.description.isNotBlank() && location.description.split(",").any { 
-                        it.trim().isNotBlank() && content.contains(it.trim(), ignoreCase = true) 
-                    }
-                    
-                    if (nameMatch || descMatch) {
-                        val currentChapters = location.chapters
-                        if (!currentChapters.contains(chapterTitle, ignoreCase = true)) {
-                            val newChapters = if (currentChapters.isBlank()) {
-                                chapterTitle
-                            } else {
-                                "$currentChapters, $chapterTitle"
-                            }
-                            
-                            locationRepository.saveLocation(
-                                location.copy(chapters = newChapters)
-                            )
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                // Ignora falhas na atualização de locais (non-critical path)
-            }
-        }
-    }
-
     /** Limpa a notificação de salvamento (chamado após exibir o Snackbar). */
     fun clearSavedNotice() {
         _uiState.update { it.copy(lastSavedNotice = null) }
-    }
-}
-
-/**
- * Factory para criação do [EditorViewModel] com parâmetros do capítulo.
- */
-class EditorViewModelFactory(
-    private val chapterId: Long,
-    private val bookId: Long,
-    private val repository: ChapterRepository,
-    private val characterRepository: com.livrohub.domain.repository.CharacterRepository,
-    private val locationRepository: com.livrohub.domain.repository.LocationRepository
-) : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(EditorViewModel::class.java)) {
-            return EditorViewModel(chapterId, bookId, repository, characterRepository, locationRepository) as T
-        }
-        throw IllegalArgumentException("ViewModel desconhecido: ${modelClass.name}")
     }
 }

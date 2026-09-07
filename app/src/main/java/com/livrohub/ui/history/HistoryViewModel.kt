@@ -1,11 +1,10 @@
 package com.livrohub.ui.history
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.livrohub.domain.model.ChapterVersion
 import com.livrohub.domain.repository.ChapterRepository
-import kotlinx.coroutines.flow.SharingStarted
+import com.livrohub.ui.common.WhileUiSubscribed
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -49,7 +48,7 @@ class HistoryViewModel(
         )
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
+        started = WhileUiSubscribed,
         initialValue = HistoryUiState()
     )
 
@@ -63,18 +62,5 @@ class HistoryViewModel(
                 )
             }
         }
-    }
-}
-
-class HistoryViewModelFactory(
-    private val chapterId: Long,
-    private val repository: ChapterRepository
-) : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(HistoryViewModel::class.java)) {
-            return HistoryViewModel(chapterId, repository) as T
-        }
-        throw IllegalArgumentException("ViewModel desconhecido: ${modelClass.name}")
     }
 }

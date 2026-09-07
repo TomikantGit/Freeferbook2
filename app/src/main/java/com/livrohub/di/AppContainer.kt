@@ -18,6 +18,7 @@ import com.livrohub.domain.repository.CharacterRepository
 import com.livrohub.domain.repository.ImageRepository
 import com.livrohub.domain.repository.LocationRepository
 import com.livrohub.domain.repository.SettingsRepository
+import com.livrohub.domain.worldbuilding.ChapterMentionSynchronizer
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -29,31 +30,58 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
  *
  * @param context Application context utilizado para criar o banco de dados e DataStore.
  */
-class AppContainer(context: Context) {
+class AppContainer(context: Context) : AppDependencies {
 
-    private val database: LivroHubDatabase = Room.databaseBuilder(
-        context.applicationContext,
-        LivroHubDatabase::class.java,
-        "livrohub.db"
-    )
-        .fallbackToDestructiveMigration()
-        .build()
+    private val appContext = context.applicationContext
+
+    private val database: LivroHubDatabase by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        Room.databaseBuilder(
+            appContext,
+            LivroHubDatabase::class.java,
+            DATABASE_NAME
+        )
+            .fallbackToDestructiveMigration()
+            .build()
+    }
 
     /** Repositório para operações CRUD de livros. */
-    val bookRepository: BookRepository = OfflineBookRepository(database)
+    override val bookRepository: BookRepository by lazy {
+        OfflineBookRepository(database.bookDao())
+    }
 
     /** Repositório para operações CRUD de capítulos e suas versões. */
-    val chapterRepository: ChapterRepository = OfflineChapterRepository(database)
+    override val chapterRepository: ChapterRepository by lazy {
+        OfflineChapterRepository(database)
+    }
 
     /** Repositório para operações CRUD de personagens. */
-    val characterRepository: CharacterRepository = OfflineCharacterRepository(database.characterDao())
+    override val characterRepository: CharacterRepository by lazy {
+        OfflineCharacterRepository(database.characterDao())
+    }
 
     /** Repositório para operações de imagens. */
-    val imageRepository: ImageRepository = OfflineImageRepository(database)
+    override val imageRepository: ImageRepository by lazy {
+        OfflineImageRepository(database)
+    }
 
     /** Repositório para operações CRUD de locais. */
-    val locationRepository: LocationRepository = OfflineLocationRepository(database.locationDao())
+    override val locationRepository: LocationRepository by lazy {
+        OfflineLocationRepository(database.locationDao())
+    }
+
+    override val chapterMentionSynchronizer: ChapterMentionSynchronizer by lazy {
+        ChapterMentionSynchronizer(
+            characterRepository = characterRepository,
+            locationRepository = locationRepository
+        )
+    }
 
     /** Repositório para preferências do usuário (tema, fonte, etc). */
-    val settingsRepository: SettingsRepository = SettingsRepositoryImpl(context.dataStore)
+    override val settingsRepository: SettingsRepository by lazy {
+        SettingsRepositoryImpl(appContext.dataStore)
+    }
+
+    private companion object {
+        const val DATABASE_NAME = "livrohub.db"
+    }
 }

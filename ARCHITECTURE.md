@@ -1,261 +1,243 @@
-# LivroHub — Arquitetura do Sistema
+# Freeferbook / LivroHub — Arquitetura do Sistema
 
-## Visão Geral
+## Visão geral
 
-LivroHub é um app Android offline, escrito em Kotlin + Jetpack Compose, que funciona como um "GitHub para livros". Permite criar livros, organizar capítulos, editar texto com versionamento completo, comparar diferenças entre versões e exportar conteúdo.
+Aplicativo Android nativo, offline-first, para escrita e organização de manuscritos. O código usa Kotlin, Jetpack Compose, Room, DataStore, Coroutines/StateFlow e uma camada de domínio explícita.
 
-**Stack tecnológica**:
+Princípios atuais:
 
-| Camada | Tecnologia |
-|--------|-----------|
-| Linguagem | Kotlin |
-| UI | Jetpack Compose + Material 3 |
-| Arquitetura | MVVM + Repository Pattern |
-| Banco de dados | Room/SQLite |
-| Preferências | DataStore Preferences |
-| Diff | java-diff-utils (DiffRowGenerator) |
-| Async | Coroutines + StateFlow |
-| Imagens | Coil Compose |
-| Min SDK | 24 |
+- estado de UI unidirecional;
+- histórico de versões imutável;
+- dependências por contratos, sem framework de DI;
+- navegação tipada por estado;
+- regras editoriais/worldbuilding fora dos Composables;
+- recursos online opcionais e isolados do fluxo de escrita offline.
 
----
-
-## Diagrama de Camadas
+## Camadas
 
 ```mermaid
 graph TB
-    subgraph UI["UI Layer"]
-        direction LR
-        Screens["Screens (Compose)"]
-        ViewModels["ViewModels"]
-    end
-
-    subgraph Domain["Domain Layer"]
-        direction LR
-        Models["Models"]
-        RepoInterfaces["Repository Interfaces"]
-        DiffEngine["TextDiffEngine"]
-    end
-
-    subgraph Data["Data Layer"]
-        direction LR
-        RepoImpl["Repository Implementations"]
-        DAOs["DAOs"]
-        Entities["Room Entities"]
-        DB["LivroHubDatabase"]
-        DataStore["DataStore Preferences"]
-    end
-
-    Screens --> ViewModels
-    ViewModels --> RepoInterfaces
-    ViewModels --> DiffEngine
-    RepoInterfaces -.-> RepoImpl
-    RepoImpl --> DAOs
-    RepoImpl --> DataStore
-    DAOs --> DB
-    Entities --> DB
+    UI["UI / Compose"] --> VM["ViewModels"]
+    UI --> NAV["AppNavigationState"]
+    VM --> DOMAIN["Serviços de domínio"]
+    VM --> REPO["Repository interfaces"]
+    DOMAIN --> REPO
+    REPO -. implementação .-> DATA["Repositories data"]
+    DATA --> ROOM["Room DAOs / Database"]
+    DATA --> DS["DataStore"]
+    UI --> UPDATE["Updater de teste isolado"]
 ```
 
----
+### UI
 
-## Mapa de Pacotes
+Responsável por composição, interação e coleta de estado. Screens não devem conter regras de persistência ou de domínio.
 
-```
-com.livrohub/
-├── LivroHubApp.kt              # Application: inicializa AppContainer
-├── MainActivity.kt             # Activity: injeta repositórios no Compose
-├── di/
-│   └── AppContainer.kt         # DI manual: cria DB, DAOs, repositórios
-├── data/
-│   ├── local/
-│   │   ├── LivroHubDatabase.kt # Room Database (v4)
-│   │   ├── BookEntity.kt       # Entidade: livros
-│   │   ├── BookDao.kt          # DAO: operações de livros + stats
-│   │   ├── ChapterEntity.kt    # Entidade: capítulos
-│   │   ├── ChapterDao.kt       # DAO: operações de capítulos
-│   │   ├── ChapterVersionEntity.kt  # Entidade: versões imutáveis
-│   │   ├── ChapterVersionDao.kt     # DAO: operações de versões
-│   │   ├── CharacterEntity.kt  # Entidade: personagens
-│   │   └── CharacterDao.kt     # DAO: operações de personagens
-│   └── repository/
-│       ├── OfflineBookRepository.kt      # Impl: livros
-│       ├── OfflineChapterRepository.kt   # Impl: capítulos + versões
-│       ├── OfflineCharacterRepository.kt # Impl: personagens
-│       └── SettingsRepositoryImpl.kt     # Impl: DataStore
-├── domain/
-│   ├── model/
-│   │   ├── Book.kt             # Modelo: livro
-│   │   ├── BookWithStats.kt    # Modelo: livro + estatísticas
-│   │   ├── Chapter.kt          # Modelo: capítulo
-│   │   ├── ChapterVersion.kt   # Modelo: versão de capítulo
-│   │   ├── Character.kt        # Modelo: personagem
-│   │   └── AppSettings.kt      # Modelo: configurações + enum AppTheme
-│   ├── repository/
-│   │   ├── BookRepository.kt      # Interface: livros
-│   │   ├── ChapterRepository.kt   # Interface: capítulos
-│   │   ├── CharacterRepository.kt # Interface: personagens
-│   │   └── SettingsRepository.kt  # Interface: configurações
-│   └── diff/
-│       └── TextDiffEngine.kt   # Motor de diff por palavra
-└── ui/
-    ├── LivroHubAppRoot.kt      # Composable raiz: tema + navegação
-    ├── home/
-    │   └── HomeScreen.kt       # Tela inicial
-    ├── library/
-    │   ├── LibraryScreen.kt    # Biblioteca de livros
-    │   └── LibraryViewModel.kt
-    ├── workspace/
-    │   └── BookWorkspaceScreen.kt  # Workspace: abas capítulos/personagens
-    ├── chapters/
-    │   ├── ChaptersScreen.kt   # Lista de capítulos
-    │   └── ChaptersViewModel.kt
-    ├── characters/
-    │   ├── CharactersScreen.kt # Catálogo de personagens
-    │   └── CharacterViewModel.kt
-    ├── editor/
-    │   ├── EditorScreen.kt     # Editor de texto
-    │   ├── EditorViewModel.kt
-    │   └── MarkdownVisualTransformation.kt  # Highlight Markdown
-    ├── diff/
-    │   ├── DiffScreen.kt       # Tela de diff (dinâmico + estático)
-    │   └── DiffViewModel.kt
-    ├── history/
-    │   ├── HistoryScreen.kt    # Histórico de versões
-    │   └── HistoryViewModel.kt
-    └── settings/
-        ├── SettingsScreen.kt   # Configurações do app
-        └── SettingsViewModel.kt
+### ViewModels
+
+Expõem `StateFlow` e coordenam ações da tela. A política padrão de compartilhamento está centralizada em `WhileUiSubscribed` (`5s`).
+
+### Domain
+
+Contém modelos, contratos de repositório e regras reutilizáveis, como:
+
+- `TextDiffEngine`;
+- `TextRevisionEngine`;
+- `ChapterMentionSynchronizer`.
+
+### Data
+
+Implementações offline com Room/DataStore e serviços Android específicos, como o updater de APK de teste.
+
+## Injeção de dependências
+
+`AppContainer` implementa `AppDependencies`.
+
+```text
+LivroHubApp
+  └─ AppContainer : AppDependencies
+      ├─ BookRepository
+      ├─ ChapterRepository
+      ├─ CharacterRepository
+      ├─ LocationRepository
+      ├─ ImageRepository
+      ├─ SettingsRepository
+      └─ ChapterMentionSynchronizer
 ```
 
----
+As dependências são `lazy`, então abrir a Home não força a criação/abertura do banco Room. `MainActivity` injeta apenas `AppDependencies` em `LivroHubAppRoot`, evitando aumentar a assinatura do composable raiz a cada novo serviço.
 
-## Schema do Banco de Dados (v4)
+Para ViewModels parametrizados, usar:
+
+```kotlin
+viewModel(
+    key = "editor-$chapterId",
+    factory = viewModelFactory {
+        EditorViewModel(...)
+    }
+)
+```
+
+Não criar uma classe `FooViewModelFactory` por ViewModel salvo quando houver necessidade específica de uma factory customizada.
+
+## Navegação
+
+A navegação permanece sem Navigation Component, mas é tipada e centralizada.
+
+### Primeiro nível
+
+`AppRoute`:
+
+- `HOME`
+- `LIBRARY`
+- `SETTINGS`
+- `BOOK_WORKSPACE`
+
+### Dentro de um capítulo
+
+`ChapterScreen`:
+
+- `EDITOR`
+- `PREVIEW`
+- `REVISION`
+- `HISTORY`
+- `IMAGES`
+- `DYNAMIC_DIFF`
+- `STATIC_DIFF`
+
+`AppNavigationState` é imutável. A mudança de rota ocorre por métodos como `openBook`, `openChapter`, `openChapterScreen` e `showStaticDiff`.
+
+Isso elimina combinações inválidas que existiam quando histórico, imagens, revisão e preview eram controlados por `Boolean`s independentes.
+
+### Persistência de navegação
+
+O `Saver` guarda apenas estado pequeno: IDs e enums. Conteúdo de capítulos usado em diff é propositalmente transitório e não entra no `Bundle`, evitando `TransactionTooLargeException` em textos extensos.
+
+## Escopo do editor
+
+Existe uma única instância de `EditorViewModel` por `chapterId`. Editor, visão formatada e revisão compartilham essa instância, portanto alterações ainda não salvas sobrevivem à troca entre essas subtelas.
+
+Ao salvar uma versão:
+
+```text
+EditorViewModel
+  ├─ ChapterRepository.saveVersion()
+  └─ ChapterMentionSynchronizer.synchronize()
+       ├─ CharacterRepository
+       └─ LocationRepository
+```
+
+O sincronizador de menções é um serviço de domínio independente. Novos tipos de worldbuilding devem ser adicionados nele (ou em serviços equivalentes), e não diretamente no ViewModel do editor.
+
+## Banco de dados
+
+Room schema atual: **v6**.
+
+Entidades:
+
+- `BookEntity`
+- `ChapterEntity`
+- `ChapterVersionEntity`
+- `CharacterEntity`
+- `LocationEntity`
+- `ImageEntity`
+
+Relação principal:
 
 ```mermaid
 erDiagram
-    books {
-        long id PK
-        text title
-        long created_at
-    }
-
-    chapters {
-        long id PK
-        long book_id FK
-        text title
-        int order_index
-        long created_at
-    }
-
-    chapter_versions {
-        long id PK
-        long chapter_id FK
-        text content
-        long created_at
-        text message
-        int sequence_number
-        int word_count
-        int char_count
-        int line_count
-    }
-
-    characters {
-        long id PK
-        long book_id FK
-        text name
-        text surnames
-        text chapters
-        text image_uri
-    }
-
-    books ||--o{ chapters : "CASCADE"
-    books ||--o{ characters : "CASCADE"
-    chapters ||--o{ chapter_versions : "CASCADE"
+    books ||--o{ chapters : CASCADE
+    books ||--o{ characters : CASCADE
+    books ||--o{ locations : CASCADE
+    books ||--o{ book_images : CASCADE
+    chapters ||--o{ chapter_versions : CASCADE
 ```
 
-**Índices**:
-- `chapters(book_id)`
-- `chapter_versions(chapter_id)`
-- `chapter_versions(chapter_id, sequence_number)` UNIQUE
-- `characters(book_id)`
+`OfflineBookRepository` recebe `BookDao` diretamente em vez do `RoomDatabase`, reduzindo acoplamento e permitindo teste unitário sem Android/Room real.
 
----
+### Dívida técnica crítica
 
-## Fluxo de Dados
+`AppContainer` ainda usa `fallbackToDestructiveMigration()`. Antes de distribuir versões que alterem schema para usuários reais, substituir por migrations explícitas e testadas. Dados de manuscritos não devem depender de migração destrutiva.
 
-### Leitura (reativo)
+## Atualização de builds de teste
 
-```
-Room DB → DAO (Flow) → Repository (map toDomain) → ViewModel (StateFlow) → Screen (collectAsStateWithLifecycle)
-```
+O updater é separado das preferências visuais:
 
-### Escrita
-
-```
-Screen → ViewModel (suspend) → Repository (suspend + withTransaction) → DAO (suspend) → Room DB
+```text
+SettingsScreen
+  └─ TestUpdateSection
+      └─ TestUpdateViewModel
+          └─ TestUpdateManager
 ```
 
-### Salvamento de Versão
+`TestUpdateViewModel` mantém estado de verificação/download/instalação entre mudanças de configuração. `SettingsScreen` não manipula rede ou arquivos APK diretamente.
 
-1. Usuário toca "Salvar versão"
-2. `EditorViewModel.saveVersion()` chamado
-3. `ChapterRepository.saveVersion()` abre transação Room
-4. Dentro da transação:
-   - Calcula `nextSequence = MAX(sequence_number) + 1`
-   - Calcula métricas (palavras, linhas, caracteres)
-   - Insere nova `ChapterVersionEntity`
-5. Flow reativo emite atualização
-6. UI recompõe automaticamente
+O canal público de testes usa o package `com.livrohub.test`, separado do app local `com.livrohub`.
 
-### Restauração de Versão
+## Fluxos reativos
 
-1. Usuário toca "Restaurar" no histórico
-2. `HistoryViewModel.restoreVersion()` chama `saveVersion()` com o conteúdo antigo
-3. Uma **nova versão** é criada (não altera/deleta nenhuma anterior)
-4. Mensagem automática: "Restaurado da versao #X"
+Padrão de leitura:
 
----
+```text
+Room/DataStore Flow
+  → Repository
+  → ViewModel StateFlow
+  → collectAsStateWithLifecycle()
+```
 
-## Padrões e Decisões Técnicas
+Para `stateIn`, usar `WhileUiSubscribed`, definido em `ui/common/ViewModelSupport.kt`, em vez de repetir timeouts numéricos.
 
-### MVVM + Repository
-- **ViewModels** expõem `StateFlow` com UiState dedicado
-- **Repositories** são interfaces no `domain` com implementações no `data`
-- **Screens** são composables stateless que recebem estado e callbacks
+## Testes
 
-### Injeção de Dependências Manual
-- `AppContainer` instancia tudo no `onCreate()` do `Application`
-- Sem Hilt/Dagger para manter a simplicidade nesta fase
-- ViewModels usam `ViewModelProvider.Factory` customizadas
+`testDebugUnitTest` é a validação unitária padrão e deve permanecer executável.
 
-### Histórico Imutável
-- Versões nunca são editadas ou deletadas
-- Restauração cria nova versão (preserva trilha completa)
-- Exclusão de livro/capítulo usa `CASCADE` para limpar versões
+Cobertura atual inclui:
 
-### Navegação Compose Simples
-- Estado via `rememberSaveable` + enum `AppRoute`
-- Sem Navigation Component (adequado para o número atual de telas)
-- Sobrevive a rotação via `rememberSaveable`
+- repositório de livros;
+- diff de texto;
+- revisão textual;
+- formatação Markdown;
+- navegação tipada;
+- sincronização de menções de worldbuilding.
 
-### Performance
-- Regex compilados como `companion object` constantes
-- `DiffRowGenerator` compartilhado entre instâncias
-- `TextStyle` e `VisualTransformation` memorizados com `remember`
-- Métricas de texto pré-calculadas no salvamento (não em queries de leitura)
-- `SharingStarted.WhileSubscribed(5_000)` para cancelar coleta quando tela não visível
+Ao adicionar regra de domínio, preferir dependências injetáveis (DAO/repository/clock) para que o teste não precise subir Android/Room.
 
-### Dark Mode
-- Cores de diff com paleta dedicada para dark e light mode (objeto `DiffColors`)
-- Tema gerenciado via `AppTheme` enum + DataStore Preferences
+## Organização de pacotes relevante
 
----
+```text
+com.livrohub/
+├─ di/
+│  ├─ AppDependencies.kt
+│  └─ AppContainer.kt
+├─ data/
+│  ├─ local/
+│  ├─ repository/
+│  └─ update/
+├─ domain/
+│  ├─ diff/
+│  ├─ model/
+│  ├─ repository/
+│  ├─ revision/
+│  └─ worldbuilding/
+└─ ui/
+   ├─ common/
+   ├─ navigation/
+   ├─ editor/
+   ├─ preview/
+   ├─ revision/
+   ├─ history/
+   ├─ settings/
+   │  └─ update/
+   └─ ...
+```
 
-## Como Continuar o Desenvolvimento
+## Regras para novas implementações
 
-1. **Clonar/copiar** o projeto para a nova conta
-2. Abrir no **Android Studio** (baixará dependências automaticamente)
-3. Ler `HANDOFF.md` para o estado completo do sistema
-4. Ler `PROGRESS.md` para o histórico de desenvolvimento
-5. **Não recomece do zero** — o código está funcional e documentado
-6. Manter etapas pequenas e atualizar a documentação após cada módulo
+1. Nova tela de capítulo: adicionar uma entrada em `ChapterScreen` e um branch em `ChapterRoute`; não criar novos booleanos paralelos.
+2. Nova dependência global: adicionar ao `AppDependencies` e inicializar `lazy` no `AppContainer`.
+3. Nova regra de negócio: preferir `domain/` e injetá-la no ViewModel; não colocá-la em Composable.
+4. Novo ViewModel parametrizado: usar `viewModelFactory { ... }` e chave estável.
+5. Novo `StateFlow.stateIn`: usar `WhileUiSubscribed`.
+6. Dados grandes/transitórios: não salvar em `rememberSaveable`/Bundle.
+7. Mudança de banco: criar migration Room explícita e teste de migration antes de incrementar schema.
+8. Feature online: manter opt-in e desacoplada das funções de escrita/biblioteca offline.
+9. Toda refatoração relevante deve fechar com `testDebugUnitTest` + `assembleDebug`.

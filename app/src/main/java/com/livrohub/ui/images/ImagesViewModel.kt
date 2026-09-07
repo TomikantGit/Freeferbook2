@@ -1,7 +1,6 @@
 package com.livrohub.ui.images
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.livrohub.domain.model.ImageReference
 import com.livrohub.domain.repository.ImageRepository
@@ -62,18 +61,5 @@ class ImagesViewModel(
 
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
-    }
-}
-
-class ImagesViewModelFactory(
-    private val bookId: Long,
-    private val repository: ImageRepository
-) : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(ImagesViewModel::class.java)) {
-            return ImagesViewModel(bookId, repository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

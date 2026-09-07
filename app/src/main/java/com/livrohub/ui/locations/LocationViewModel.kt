@@ -1,11 +1,10 @@
 package com.livrohub.ui.locations
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.livrohub.domain.model.Location
 import com.livrohub.domain.repository.LocationRepository
-import kotlinx.coroutines.flow.SharingStarted
+import com.livrohub.ui.common.WhileUiSubscribed
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -36,7 +35,7 @@ class LocationViewModel(
         .map { LocationsUiState(locations = it) }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = WhileUiSubscribed,
             initialValue = LocationsUiState(isLoading = true)
         )
 
@@ -50,15 +49,5 @@ class LocationViewModel(
         viewModelScope.launch {
             repository.deleteLocation(location)
         }
-    }
-}
-
-class LocationViewModelFactory(
-    private val bookId: Long,
-    private val repository: LocationRepository
-) : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return LocationViewModel(bookId, repository) as T
     }
 }

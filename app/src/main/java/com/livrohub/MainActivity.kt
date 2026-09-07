@@ -16,14 +16,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val app = application as LivroHubApp
         setContent {
-            LivroHubAppRoot(
-                bookRepository = app.container.bookRepository,
-                chapterRepository = app.container.chapterRepository,
-                settingsRepository = app.container.settingsRepository,
-                characterRepository = app.container.characterRepository,
-                imageRepository = app.container.imageRepository,
-                locationRepository = app.container.locationRepository
-            )
+            LivroHubAppRoot(dependencies = app.container)
         }
     }
 }

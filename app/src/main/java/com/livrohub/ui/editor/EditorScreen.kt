@@ -9,13 +9,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material.icons.filled.FormatStrikethrough
 import androidx.compose.material.icons.filled.Title
 import androidx.compose.material.icons.filled.FormatQuote
-import androidx.compose.material.icons.filled.FactCheck
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Save
@@ -176,7 +176,7 @@ private fun EditorContent(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                     }
                 },
                 actions = {
@@ -207,7 +207,7 @@ private fun EditorContent(
                             onClick = onOpenRevision,
                             enabled = !uiState.isLoading
                         ) {
-                            Icon(Icons.Default.FactCheck, contentDescription = "Revisão")
+                            Icon(Icons.AutoMirrored.Filled.FactCheck, contentDescription = "Revisão")
                         }
                         IconButton(
                             onClick = onOpenImages,

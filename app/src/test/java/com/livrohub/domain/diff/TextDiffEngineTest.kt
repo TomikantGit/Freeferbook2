@@ -61,7 +61,7 @@ class TextDiffEngineTest {
     }
 
     @Test
-    fun `compare complete change should return all removed and added lines`() {
+    fun `compare complete change should preserve changed row order`() {
         val oldText = "A\nB"
         val newText = "C\nD"
         val diff = engine.compare(oldText, newText)
@@ -69,10 +69,10 @@ class TextDiffEngineTest {
         assertEquals(4, diff.size)
         assertEquals(DiffLineType.Removed, diff[0].type)
         assertEquals("A", diff[0].text)
-        assertEquals(DiffLineType.Removed, diff[1].type)
-        assertEquals("B", diff[1].text)
-        assertEquals(DiffLineType.Added, diff[2].type)
-        assertEquals("C", diff[2].text)
+        assertEquals(DiffLineType.Added, diff[1].type)
+        assertEquals("C", diff[1].text)
+        assertEquals(DiffLineType.Removed, diff[2].type)
+        assertEquals("B", diff[2].text)
         assertEquals(DiffLineType.Added, diff[3].type)
         assertEquals("D", diff[3].text)
     }

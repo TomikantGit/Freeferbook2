@@ -1,7 +1,7 @@
 package com.livrohub.data.repository
 
 import com.livrohub.data.local.BookEntity
-import com.livrohub.data.local.LivroHubDatabase
+import com.livrohub.data.local.BookDao
 import com.livrohub.domain.model.Book
 import com.livrohub.domain.model.BookWithStats
 import com.livrohub.domain.repository.BookRepository
@@ -15,15 +15,14 @@ import kotlinx.coroutines.flow.map
  * Todas as operações de leitura retornam [Flow] reativo via DAOs do Room.
  * Operações de escrita são `suspend` e executam diretamente no DAO.
  *
- * @param database Instância do banco de dados Room.
+ * @param bookDao DAO de livros. Injetado diretamente para reduzir acoplamento ao RoomDatabase
+ * e permitir testes unitários sem banco Android real.
  * @param clock Função de relógio injetável para facilitar testes. Padrão: [System.currentTimeMillis].
  */
 class OfflineBookRepository(
-    private val database: LivroHubDatabase,
+    private val bookDao: BookDao,
     private val clock: () -> Long = { System.currentTimeMillis() }
 ) : BookRepository {
-
-    private val bookDao = database.bookDao()
 
     override fun observeBooks(): Flow<List<Book>> =
         bookDao.observeBooks().map { books -> books.map { it.toDomain() } }

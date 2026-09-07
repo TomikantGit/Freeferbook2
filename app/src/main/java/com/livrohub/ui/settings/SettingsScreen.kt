@@ -6,24 +6,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.livrohub.data.update.TestUpdateCheckResult
-import com.livrohub.data.update.TestUpdateInfo
-import com.livrohub.data.update.TestUpdateInstallResult
-import com.livrohub.data.update.TestUpdateManager
 import com.livrohub.domain.model.*
+import com.livrohub.ui.settings.update.TestUpdateSection
 import com.livrohub.ui.theme.LivroHubTheme
-import kotlinx.coroutines.launch
-import java.io.File
-import kotlin.math.roundToInt
 
 /**
  * Tela de configurações avançadas (Design System) do aplicativo LivroHub.
@@ -61,7 +54,7 @@ private fun SettingsContent(
                 title = { Text("Configurações", style = LivroHubTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -266,219 +259,9 @@ private fun SettingsContent(
             HorizontalDivider(color = LivroHubTheme.colors.border)
 
             SettingsSectionHeader(title = "Atualizações de teste")
-            TestUpdatePreference()
+            TestUpdateSection()
             
             Spacer(modifier = Modifier.height(32.dp))
-        }
-    }
-}
-
-private sealed interface TestUpdateUiState {
-    data object Idle : TestUpdateUiState
-    data object Checking : TestUpdateUiState
-    data object UpToDate : TestUpdateUiState
-    data class Available(val update: TestUpdateInfo) : TestUpdateUiState
-    data class Downloading(val update: TestUpdateInfo) : TestUpdateUiState
-    data class Ready(val update: TestUpdateInfo, val apkFile: File) : TestUpdateUiState
-    data class Error(val message: String) : TestUpdateUiState
-}
-
-/**
- * Controle manual do canal de APKs de teste.
- *
- * Nenhuma consulta de rede é feita automaticamente: o usuário decide quando verificar
- * e quando baixar uma atualização.
- */
-@Composable
-private fun TestUpdatePreference() {
-    val context = LocalContext.current
-    val manager = remember(context.applicationContext) {
-        TestUpdateManager(context.applicationContext)
-    }
-    val scope = rememberCoroutineScope()
-    var state by remember { mutableStateOf<TestUpdateUiState>(TestUpdateUiState.Idle) }
-    var installNotice by remember { mutableStateOf<String?>(null) }
-
-    fun requestInstall(apkFile: File) {
-        when (val result = manager.requestInstall(apkFile)) {
-            TestUpdateInstallResult.InstallerOpened -> {
-                installNotice = "Instalador aberto. Confirme a atualização no Android."
-            }
-
-            TestUpdateInstallResult.PermissionRequired -> {
-                installNotice =
-                    "Autorize o Freeferbook a instalar apps desta fonte. Ao voltar, toque em Instalar atualização."
-            }
-
-            is TestUpdateInstallResult.Error -> {
-                installNotice = result.message
-            }
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-    ) {
-        Text(
-            text = "Versão instalada",
-            style = LivroHubTheme.typography.bodyLarge,
-            color = LivroHubTheme.colors.onBackground
-        )
-        Text(
-            text = "${manager.currentVersionName} (código ${manager.currentVersionCode})",
-            style = LivroHubTheme.typography.bodySmall,
-            color = LivroHubTheme.colors.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        when (val currentState = state) {
-            TestUpdateUiState.Idle -> {
-                Text(
-                    text = "Verifique manualmente o APK de teste mais recente publicado pelo GitHub Actions.",
-                    style = LivroHubTheme.typography.bodySmall,
-                    color = LivroHubTheme.colors.onSurfaceVariant
-                )
-            }
-
-            TestUpdateUiState.Checking -> {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text("Verificando atualização...", style = LivroHubTheme.typography.bodySmall)
-                }
-            }
-
-            TestUpdateUiState.UpToDate -> {
-                Text(
-                    text = "Você já está usando a versão de teste mais recente.",
-                    style = LivroHubTheme.typography.bodySmall,
-                    color = LivroHubTheme.colors.onSurfaceVariant
-                )
-            }
-
-            is TestUpdateUiState.Available -> {
-                Text(
-                    text = "Nova versão: ${currentState.update.versionName} (código ${currentState.update.versionCode})",
-                    style = LivroHubTheme.typography.bodyMedium,
-                    color = LivroHubTheme.colors.primary,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                )
-                if (currentState.update.notes.isNotBlank()) {
-                    Text(
-                        text = currentState.update.notes,
-                        style = LivroHubTheme.typography.bodySmall,
-                        color = LivroHubTheme.colors.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
-                }
-            }
-
-            is TestUpdateUiState.Downloading -> {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        "Baixando ${currentState.update.versionName}...",
-                        style = LivroHubTheme.typography.bodySmall
-                    )
-                }
-            }
-
-            is TestUpdateUiState.Ready -> {
-                Text(
-                    text = "${currentState.update.versionName} foi baixada e validada por SHA-256.",
-                    style = LivroHubTheme.typography.bodySmall,
-                    color = LivroHubTheme.colors.onSurfaceVariant
-                )
-            }
-
-            is TestUpdateUiState.Error -> {
-                Text(
-                    text = currentState.message,
-                    style = LivroHubTheme.typography.bodySmall,
-                    color = LivroHubTheme.colors.error
-                )
-            }
-        }
-
-        installNotice?.let { notice ->
-            Text(
-                text = notice,
-                style = LivroHubTheme.typography.bodySmall,
-                color = LivroHubTheme.colors.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        when (val currentState = state) {
-            TestUpdateUiState.Checking,
-            is TestUpdateUiState.Downloading -> {
-                Button(onClick = {}, enabled = false) {
-                    Text(if (currentState is TestUpdateUiState.Downloading) "Baixando..." else "Verificando...")
-                }
-            }
-
-            is TestUpdateUiState.Available -> {
-                Button(
-                    onClick = {
-                        installNotice = null
-                        state = TestUpdateUiState.Downloading(currentState.update)
-                        scope.launch {
-                            manager.downloadUpdate(currentState.update)
-                                .onSuccess { apkFile ->
-                                    state = TestUpdateUiState.Ready(currentState.update, apkFile)
-                                    requestInstall(apkFile)
-                                }
-                                .onFailure { error ->
-                                    state = TestUpdateUiState.Error(
-                                        error.message ?: "Não foi possível baixar a atualização."
-                                    )
-                                }
-                        }
-                    }
-                ) {
-                    Text("Baixar e instalar")
-                }
-            }
-
-            is TestUpdateUiState.Ready -> {
-                Button(onClick = { requestInstall(currentState.apkFile) }) {
-                    Text("Instalar atualização")
-                }
-            }
-
-            else -> {
-                Button(
-                    onClick = {
-                        installNotice = null
-                        state = TestUpdateUiState.Checking
-                        scope.launch {
-                            state = when (val result = manager.checkForUpdate()) {
-                                is TestUpdateCheckResult.Available ->
-                                    TestUpdateUiState.Available(result.update)
-                                TestUpdateCheckResult.UpToDate -> TestUpdateUiState.UpToDate
-                                is TestUpdateCheckResult.Error ->
-                                    TestUpdateUiState.Error(result.message)
-                            }
-                        }
-                    }
-                ) {
-                    Text("Verificar atualização")
-                }
-            }
-        }
-
-        if (state is TestUpdateUiState.Error) {
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedButton(onClick = manager::openGitHubRelease) {
-                Text("Abrir release no GitHub")
-            }
         }
     }
 }
