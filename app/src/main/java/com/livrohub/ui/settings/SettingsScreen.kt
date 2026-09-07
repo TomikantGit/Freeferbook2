@@ -8,8 +8,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -72,8 +75,6 @@ private fun SettingsContent(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
-            SettingsPreview(settings = settings)
-
             SettingsCategory(
                 title = "Aparência",
                 description = "Tema, tipografia, espaçamento, componentes e animações."
@@ -282,6 +283,8 @@ private fun SettingsCategory(
     description: String,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    var expanded by rememberSaveable(title) { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -291,29 +294,44 @@ private fun SettingsCategory(
         border = androidx.compose.foundation.BorderStroke(1.dp, LivroHubTheme.colors.border)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = 18.dp,
-                    bottom = 6.dp
-                )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded }
+                    .padding(
+                        start = 16.dp,
+                        end = 8.dp,
+                        top = 16.dp,
+                        bottom = 16.dp
+                    ),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = title,
-                    color = LivroHubTheme.colors.primary,
-                    style = LivroHubTheme.typography.titleLarge,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                )
-                Text(
-                    text = description,
-                    color = LivroHubTheme.colors.onSurfaceVariant,
-                    style = LivroHubTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 4.dp)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        color = LivroHubTheme.colors.primary,
+                        style = LivroHubTheme.typography.titleLarge,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+                    Text(
+                        text = description,
+                        color = LivroHubTheme.colors.onSurfaceVariant,
+                        style = LivroHubTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                Icon(
+                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (expanded) "Recolher $title" else "Expandir $title",
+                    tint = LivroHubTheme.colors.onSurfaceVariant
                 )
             }
-            content()
-            Spacer(modifier = Modifier.height(8.dp))
+
+            if (expanded) {
+                HorizontalDivider(color = LivroHubTheme.colors.border)
+                content()
+                Spacer(modifier = Modifier.height(8.dp))
+            }
         }
     }
 }
@@ -473,68 +491,5 @@ private fun SliderPreference(
                 inactiveTrackColor = LivroHubTheme.colors.primary.copy(alpha = 0.2f)
             )
         )
-    }
-}
-
-@Composable
-private fun SettingsPreview(settings: AppSettings) {
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(LivroHubTheme.radius.medium),
-        colors = CardDefaults.cardColors(
-            containerColor = LivroHubTheme.colors.surfaceVariant.copy(alpha = 0.5f)
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (settings.cardStyle == CardStyle.ELEVATED) LivroHubTheme.shadows.elevationLow else 0.dp
-        ),
-        border = if (settings.cardStyle == CardStyle.OUTLINED) androidx.compose.foundation.BorderStroke(1.dp, LivroHubTheme.colors.border) else null
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "Visualização em Tempo Real",
-                style = LivroHubTheme.typography.titleLarge,
-                color = LivroHubTheme.colors.primary
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Observe como as configurações afetam o design instantaneamente. A tipografia, as cores, o espaçamento e os estilos dos componentes mudam conforme suas preferências.",
-                style = LivroHubTheme.typography.bodyMedium,
-                color = LivroHubTheme.colors.onSurface
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    onClick = { },
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(
-                        if (settings.buttonStyle == ButtonStyle.FILLED) LivroHubTheme.radius.full else LivroHubTheme.radius.medium
-                    ),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = LivroHubTheme.colors.primary,
-                        contentColor = LivroHubTheme.colors.onPrimary
-                    )
-                ) {
-                    Text("Primário", style = LivroHubTheme.typography.labelLarge)
-                }
-                OutlinedButton(
-                    onClick = { },
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(
-                        if (settings.buttonStyle == ButtonStyle.FILLED) LivroHubTheme.radius.full else LivroHubTheme.radius.medium
-                    ),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = LivroHubTheme.colors.secondary
-                    ),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, LivroHubTheme.colors.secondary)
-                ) {
-                    Text("Secundário", style = LivroHubTheme.typography.labelLarge)
-                }
-            }
-        }
     }
 }

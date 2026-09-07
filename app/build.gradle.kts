@@ -52,7 +52,7 @@ android {
             if (publicTestBuild) {
                 applicationIdSuffix = ".test"
                 signingConfig = null
-                resValue("string", "app_name", "Freeferbook Test")
+                resValue("string", "app_name", "Freeferbook")
             } else {
                 signingConfigs.findByName("test")?.let { signingConfig = it }
             }

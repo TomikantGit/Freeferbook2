@@ -135,7 +135,7 @@ jobs:
           cat > update-site/index.html <<EOF
           <!doctype html>
           <html lang="pt-BR">
-          <head><meta charset="utf-8"><title>Freeferbook Test</title></head>
+          <head><meta charset="utf-8"><title>Freeferbook</title></head>
           <body>
             <h1>Freeferbook — canal de teste</h1>
             <p>Versão ${{ steps.version.outputs.name }}</p>

@@ -235,6 +235,13 @@
 - Removido helper de preview que ficou sem uso apos a reorganizacao.
 - `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` executados com sucesso apos a reorganizacao inicial.
 
+## Modulo 18 — Configuracoes recolhiveis e nome unificado (2026-09-07)
+
+- O canal publico de testes continua usando o `applicationId` separado `com.livrohub.test`, mas o nome exibido no Android passou de `Freeferbook Test` para apenas `Freeferbook`.
+- `Aparencia`, `Funcionalidades` e `Extras` passaram a funcionar como nos recolhiveis, todos fechados por padrao.
+- Cada no mostra somente titulo, descricao e indicador de expansao; suas opcoes internas so sao compostas apos o usuario tocar no no.
+- Removido o preview global fixo do topo das configuracoes para que nenhuma opcao fique exposta antes de o usuario escolher uma categoria.
+
 ## Observacoes
 
 - O ambiente local atual possui Java/Android SDK suficientes para `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` em modo offline.
