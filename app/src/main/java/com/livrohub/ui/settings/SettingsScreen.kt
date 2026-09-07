@@ -74,192 +74,202 @@ private fun SettingsContent(
         ) {
             SettingsPreview(settings = settings)
 
-            SettingsSectionHeader(title = "Tema e Cores")
-            DropdownPreference(
-                title = "Tema Visual",
-                description = "Altera a paleta de cores global do aplicativo.",
-                currentValue = settings.theme,
-                values = AppTheme.entries,
-                nameMapper = { it.name.replace("_", " ").lowercase().replaceFirstChar { c -> c.uppercase() } },
-                onSelect = { v -> onUpdate { it.copy(theme = v) } }
-            )
-            SwitchPreference(
-                title = "Ativar Transparência",
-                subtitle = "Efeito de vidro (Glassmorphism) no background de componentes.",
-                checked = settings.transparencyEnabled,
-                onCheckedChange = { v -> onUpdate { it.copy(transparencyEnabled = v) } }
-            )
-            SliderPreference(
-                title = "Intensidade do Blur",
-                description = "Define o nível de desfoque quando a transparência está ativa.",
-                value = settings.blurIntensity,
-                range = 0f..3f,
-                onValueChange = { v -> onUpdate { it.copy(blurIntensity = v) } }
-            )
-            SliderPreference(
-                title = "Intensidade das Sombras",
-                description = "Define a profundidade dos elementos flutuantes (como cartões e popups).",
-                value = settings.shadowIntensity,
-                range = 0f..3f,
-                onValueChange = { v -> onUpdate { it.copy(shadowIntensity = v) } }
-            )
-            InlinePreviewBox {
-                Card(
-                    modifier = Modifier.size(100.dp),
-                    colors = CardDefaults.cardColors(containerColor = LivroHubTheme.colors.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = LivroHubTheme.shadows.elevationHigh)
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Sombra", style = LivroHubTheme.typography.labelLarge, color = LivroHubTheme.colors.primary)
-                    }
-                }
+            SettingsCategory(
+                title = "Aparência",
+                description = "Tema, tipografia, espaçamento, componentes e animações."
+            ) {
+                SettingsSubsectionHeader(title = "Tema e cores")
+                DropdownPreference(
+                    title = "Tema visual",
+                    description = "Altera a paleta de cores global do aplicativo.",
+                    currentValue = settings.theme,
+                    values = AppTheme.entries,
+                    nameMapper = { it.name.replace("_", " ").lowercase().replaceFirstChar { c -> c.uppercase() } },
+                    onSelect = { v -> onUpdate { it.copy(theme = v) } }
+                )
+                SwitchPreference(
+                    title = "Ativar transparência",
+                    subtitle = "Efeito de vidro (Glassmorphism) no fundo dos componentes.",
+                    checked = settings.transparencyEnabled,
+                    onCheckedChange = { v -> onUpdate { it.copy(transparencyEnabled = v) } }
+                )
+                SliderPreference(
+                    title = "Intensidade do blur",
+                    description = "Define o nível de desfoque quando a transparência está ativa.",
+                    value = settings.blurIntensity,
+                    range = 0f..3f,
+                    onValueChange = { v -> onUpdate { it.copy(blurIntensity = v) } }
+                )
+                SliderPreference(
+                    title = "Intensidade das sombras",
+                    description = "Define a profundidade dos elementos flutuantes, como cartões e popups.",
+                    value = settings.shadowIntensity,
+                    range = 0f..3f,
+                    onValueChange = { v -> onUpdate { it.copy(shadowIntensity = v) } }
+                )
+
+                SettingsSubsectionDivider()
+                SettingsSubsectionHeader(title = "Tipografia")
+                DropdownPreference(
+                    title = "Família de fonte",
+                    description = "Define o estilo visual das letras e afeta a legibilidade do texto.",
+                    currentValue = settings.fontFamily,
+                    values = FontFamilyPreference.entries,
+                    nameMapper = { it.name.replace("_", " ") },
+                    onSelect = { v -> onUpdate { it.copy(fontFamily = v) } }
+                )
+                DropdownPreference(
+                    title = "Escala da fonte",
+                    description = "Ajusta o tamanho geral dos textos da interface.",
+                    currentValue = settings.fontScaling,
+                    values = FontScaling.entries,
+                    nameMapper = { it.name },
+                    onSelect = { v -> onUpdate { it.copy(fontScaling = v) } }
+                )
+                DropdownPreference(
+                    title = "Peso da fonte",
+                    description = "Define a espessura padrão do texto.",
+                    currentValue = settings.fontWeight,
+                    values = FontWeightPreference.entries,
+                    nameMapper = { it.name },
+                    onSelect = { v -> onUpdate { it.copy(fontWeight = v) } }
+                )
+                SliderPreference(
+                    title = "Espaçamento de letras",
+                    description = "Aumenta ou diminui a distância horizontal entre letras.",
+                    value = settings.letterSpacingSp,
+                    range = -2f..5f,
+                    onValueChange = { v -> onUpdate { it.copy(letterSpacingSp = v) } }
+                )
+                SliderPreference(
+                    title = "Altura da linha",
+                    description = "Controla o espaço vertical entre as linhas de texto.",
+                    value = settings.lineHeightMultiplier,
+                    range = 0.8f..2.5f,
+                    onValueChange = { v -> onUpdate { it.copy(lineHeightMultiplier = v) } }
+                )
+
+                SettingsSubsectionDivider()
+                SettingsSubsectionHeader(title = "Layout e componentes")
+                DropdownPreference(
+                    title = "Densidade",
+                    description = "Ajusta o espaçamento geral entre os componentes.",
+                    currentValue = settings.density,
+                    values = AppDensity.entries,
+                    nameMapper = { it.name },
+                    onSelect = { v -> onUpdate { it.copy(density = v) } }
+                )
+                DropdownPreference(
+                    title = "Estilo de navegação",
+                    description = "Escolhe como menus e abas de navegação são apresentados.",
+                    currentValue = settings.navigationStyle,
+                    values = NavigationStyle.entries,
+                    nameMapper = { it.name },
+                    onSelect = { v -> onUpdate { it.copy(navigationStyle = v) } }
+                )
+                DropdownPreference(
+                    title = "Estilo de cartões",
+                    description = "Define a aparência global dos cartões.",
+                    currentValue = settings.cardStyle,
+                    values = CardStyle.entries,
+                    nameMapper = { it.name },
+                    onSelect = { v -> onUpdate { it.copy(cardStyle = v) } }
+                )
+                DropdownPreference(
+                    title = "Estilo de botões",
+                    description = "Define a aparência global dos botões.",
+                    currentValue = settings.buttonStyle,
+                    values = ButtonStyle.entries,
+                    nameMapper = { it.name },
+                    onSelect = { v -> onUpdate { it.copy(buttonStyle = v) } }
+                )
+                SliderPreference(
+                    title = "Arredondamento das bordas",
+                    description = "Controla o arredondamento de cartões e botões.",
+                    value = settings.borderRadiusFactor,
+                    range = 0f..3f,
+                    onValueChange = { v -> onUpdate { it.copy(borderRadiusFactor = v) } }
+                )
+
+                SettingsSubsectionDivider()
+                SettingsSubsectionHeader(title = "Animações e movimento")
+                SwitchPreference(
+                    title = "Ativar animações",
+                    subtitle = "Transições e microinterações por todo o app.",
+                    checked = settings.animationsEnabled,
+                    onCheckedChange = { v -> onUpdate { it.copy(animationsEnabled = v) } }
+                )
+                SwitchPreference(
+                    title = "Reduzir movimento",
+                    subtitle = "Reduz animações não essenciais para acessibilidade.",
+                    checked = settings.reducedMotion,
+                    onCheckedChange = { v -> onUpdate { it.copy(reducedMotion = v) } }
+                )
+                SliderPreference(
+                    title = "Velocidade das animações",
+                    description = "Controla a velocidade das transições da interface.",
+                    value = settings.animationSpeedFactor,
+                    range = 0.1f..3f,
+                    onValueChange = { v -> onUpdate { it.copy(animationSpeedFactor = v) } }
+                )
             }
 
-            HorizontalDivider(color = LivroHubTheme.colors.border)
+            SettingsCategory(
+                title = "Funcionalidades",
+                description = "Comportamento do editor e módulos disponíveis no workspace."
+            ) {
+                SettingsSubsectionHeader(title = "Editor")
+                SwitchPreference(
+                    title = "Mostrar números de linha",
+                    subtitle = "Exibe a numeração das linhas na margem esquerda do editor.",
+                    checked = settings.showLineNumbers,
+                    onCheckedChange = { v -> onUpdate { it.copy(showLineNumbers = v) } }
+                )
 
-            SettingsSectionHeader(title = "Tipografia")
-            DropdownPreference(
-                title = "Família de Fonte",
-                description = "Define o estilo visual das letras (ex: Serif, Sans-Serif). Afeta a legibilidade e a personalidade.",
-                currentValue = settings.fontFamily,
-                values = FontFamilyPreference.entries,
-                nameMapper = { it.name.replace("_", " ") },
-                onSelect = { v -> onUpdate { it.copy(fontFamily = v) } }
-            )
-            DropdownPreference(
-                title = "Escala da Fonte",
-                description = "Ajusta o tamanho geral dos textos. Útil para quem prefere letras maiores ou mais conteúdo na tela.",
-                currentValue = settings.fontScaling,
-                values = FontScaling.entries,
-                nameMapper = { it.name },
-                onSelect = { v -> onUpdate { it.copy(fontScaling = v) } }
-            )
-            DropdownPreference(
-                title = "Peso da Fonte",
-                description = "Define a espessura padrão do texto. Textos mais grossos dão mais impacto.",
-                currentValue = settings.fontWeight,
-                values = FontWeightPreference.entries,
-                nameMapper = { it.name },
-                onSelect = { v -> onUpdate { it.copy(fontWeight = v) } }
-            )
-            SliderPreference(
-                title = "Espaçamento de Letras",
-                description = "Aumenta ou diminui a distância horizontal entre cada letra.",
-                value = settings.letterSpacingSp,
-                range = -2f..5f,
-                onValueChange = { v -> onUpdate { it.copy(letterSpacingSp = v) } }
-            )
-            SliderPreference(
-                title = "Altura da Linha",
-                description = "Modifica o espaço vertical entre as linhas de um parágrafo.",
-                value = settings.lineHeightMultiplier,
-                range = 0.8f..2.5f,
-                onValueChange = { v -> onUpdate { it.copy(lineHeightMultiplier = v) } }
-            )
-            InlinePreviewBox {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Tipografia", style = LivroHubTheme.typography.displayMedium, color = LivroHubTheme.colors.primary)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "O rápido raposa marrom pula sobre o cão preguiçoso.",
-                        style = LivroHubTheme.typography.bodyLarge,
-                        color = LivroHubTheme.colors.onSurfaceVariant,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                }
+                SettingsSubsectionDivider()
+                SettingsSubsectionHeader(title = "Workspace")
+                SwitchPreference(
+                    title = "Exibir personagens",
+                    subtitle = "Mantém a área de personagens disponível no workspace dos livros.",
+                    checked = settings.showCharactersTab,
+                    onCheckedChange = { v -> onUpdate { it.copy(showCharactersTab = v) } }
+                )
+                SwitchPreference(
+                    title = "Exibir locais",
+                    subtitle = "Mantém a área de locais e cenários disponível no workspace dos livros.",
+                    checked = settings.showLocationsTab,
+                    onCheckedChange = { v -> onUpdate { it.copy(showLocationsTab = v) } }
+                )
             }
 
-            HorizontalDivider(color = LivroHubTheme.colors.border)
+            SettingsCategory(
+                title = "Extras",
+                description = "Tutoriais, ajuda e ferramentas auxiliares."
+            ) {
+                SettingsSubsectionHeader(title = "Tutoriais")
+                SwitchPreference(
+                    title = "Tutorial do workspace",
+                    subtitle = "Exibe novamente as dicas guiadas da tela de workspace.",
+                    checked = settings.showWorkspaceTutorial,
+                    onCheckedChange = { v -> onUpdate { it.copy(showWorkspaceTutorial = v) } }
+                )
+                SwitchPreference(
+                    title = "Tutorial do editor",
+                    subtitle = "Exibe novamente as dicas guiadas do editor de capítulos.",
+                    checked = settings.showEditorTutorial,
+                    onCheckedChange = { v -> onUpdate { it.copy(showEditorTutorial = v) } }
+                )
+                SwitchPreference(
+                    title = "Tutorial do histórico",
+                    subtitle = "Exibe novamente as dicas guiadas do histórico de versões.",
+                    checked = settings.showHistoryTutorial,
+                    onCheckedChange = { v -> onUpdate { it.copy(showHistoryTutorial = v) } }
+                )
 
-            SettingsSectionHeader(title = "Layout e Densidade")
-            DropdownPreference(
-                title = "Densidade",
-                description = "Ajusta o espaçamento geral entre os componentes (Compacto vs Confortável).",
-                currentValue = settings.density,
-                values = AppDensity.entries,
-                nameMapper = { it.name },
-                onSelect = { v -> onUpdate { it.copy(density = v) } }
-            )
-            DropdownPreference(
-                title = "Estilo de Navegação",
-                description = "Escolhe como os menus e abas de navegação são apresentados.",
-                currentValue = settings.navigationStyle,
-                values = NavigationStyle.entries,
-                nameMapper = { it.name },
-                onSelect = { v -> onUpdate { it.copy(navigationStyle = v) } }
-            )
-            DropdownPreference(
-                title = "Estilo de Cartões",
-                description = "Alterna entre cartões com sombras (Elevated) ou com bordas (Outlined).",
-                currentValue = settings.cardStyle,
-                values = CardStyle.entries,
-                nameMapper = { it.name },
-                onSelect = { v -> onUpdate { it.copy(cardStyle = v) } }
-            )
-            DropdownPreference(
-                title = "Estilo de Botões",
-                description = "Define a aparência dos botões: preenchidos ou delineados.",
-                currentValue = settings.buttonStyle,
-                values = ButtonStyle.entries,
-                nameMapper = { it.name },
-                onSelect = { v -> onUpdate { it.copy(buttonStyle = v) } }
-            )
-            SliderPreference(
-                title = "Arredondamento das Bordas",
-                description = "Controla quão arredondados são os cantos dos cartões e botões.",
-                value = settings.borderRadiusFactor,
-                range = 0f..3f,
-                onValueChange = { v -> onUpdate { it.copy(borderRadiusFactor = v) } }
-            )
-            InlinePreviewBox {
-                Button(
-                    onClick = {},
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(
-                        if (settings.buttonStyle == ButtonStyle.FILLED) LivroHubTheme.radius.full else LivroHubTheme.radius.medium
-                    ),
-                    colors = ButtonDefaults.buttonColors(containerColor = LivroHubTheme.colors.primary)
-                ) {
-                    Text("Exemplo de Borda", style = LivroHubTheme.typography.labelLarge)
-                }
+                SettingsSubsectionDivider()
+                SettingsSubsectionHeader(title = "Atualizações de teste")
+                TestUpdateSection()
             }
-
-            HorizontalDivider(color = LivroHubTheme.colors.border)
-
-            SettingsSectionHeader(title = "Animações")
-            SwitchPreference(
-                title = "Ativar Animações",
-                subtitle = "Transições e microinterações por todo o app.",
-                checked = settings.animationsEnabled,
-                onCheckedChange = { v -> onUpdate { it.copy(animationsEnabled = v) } }
-            )
-            SwitchPreference(
-                title = "Reduzir Movimento (Acessibilidade)",
-                subtitle = "Desativa animações não essenciais para evitar enjoo ou distração.",
-                checked = settings.reducedMotion,
-                onCheckedChange = { v -> onUpdate { it.copy(reducedMotion = v) } }
-            )
-            SliderPreference(
-                title = "Velocidade das Animações",
-                description = "Muda o quão rápido ou lento as animações acontecem.",
-                value = settings.animationSpeedFactor,
-                range = 0.1f..3f,
-                onValueChange = { v -> onUpdate { it.copy(animationSpeedFactor = v) } }
-            )
-
-            HorizontalDivider(color = LivroHubTheme.colors.border)
-
-            SettingsSectionHeader(title = "Editor")
-            SwitchPreference(
-                title = "Mostrar Números de Linha",
-                subtitle = "Exibe a contagem de linhas na margem esquerda do editor de texto.",
-                checked = settings.showLineNumbers,
-                onCheckedChange = { v -> onUpdate { it.copy(showLineNumbers = v) } }
-            )
-
-            HorizontalDivider(color = LivroHubTheme.colors.border)
-
-            SettingsSectionHeader(title = "Atualizações de teste")
-            TestUpdateSection()
             
             Spacer(modifier = Modifier.height(32.dp))
         }
@@ -267,29 +277,63 @@ private fun SettingsContent(
 }
 
 @Composable
-private fun SettingsSectionHeader(title: String) {
+private fun SettingsCategory(
+    title: String,
+    description: String,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = LivroHubTheme.colors.surface),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(LivroHubTheme.radius.medium),
+        border = androidx.compose.foundation.BorderStroke(1.dp, LivroHubTheme.colors.border)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 18.dp,
+                    bottom = 6.dp
+                )
+            ) {
+                Text(
+                    text = title,
+                    color = LivroHubTheme.colors.primary,
+                    style = LivroHubTheme.typography.titleLarge,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                )
+                Text(
+                    text = description,
+                    color = LivroHubTheme.colors.onSurfaceVariant,
+                    style = LivroHubTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+            content()
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun SettingsSubsectionHeader(title: String) {
     Text(
         text = title,
-        color = LivroHubTheme.colors.primary,
+        color = LivroHubTheme.colors.onBackground,
         style = LivroHubTheme.typography.titleMedium,
         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 8.dp)
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp)
     )
 }
 
 @Composable
-private fun InlinePreviewBox(content: @Composable BoxScope.() -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .background(
-                color = LivroHubTheme.colors.surfaceVariant.copy(alpha = 0.3f),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(LivroHubTheme.radius.medium)
-            )
-            .padding(24.dp),
-        contentAlignment = Alignment.Center,
-        content = content
+private fun SettingsSubsectionDivider() {
+    HorizontalDivider(
+        color = LivroHubTheme.colors.border,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
     )
 }
 

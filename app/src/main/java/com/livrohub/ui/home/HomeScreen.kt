@@ -8,6 +8,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.livrohub.R
 import com.livrohub.ui.components.LivroHubButton
 import com.livrohub.ui.components.LivroHubHeader
 import com.livrohub.ui.theme.LivroHubTheme
@@ -27,10 +29,12 @@ fun HomeScreen(
     onNavigateToLibrary: () -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
+    val appName = stringResource(R.string.app_name)
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("LivroHub", style = LivroHubTheme.typography.titleLarge) },
+                title = { Text(appName, style = LivroHubTheme.typography.titleLarge) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = LivroHubTheme.colors.background,
                     titleContentColor = LivroHubTheme.colors.onBackground
@@ -48,7 +52,7 @@ fun HomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             LivroHubHeader(
-                title = "Bem-vindo ao LivroHub",
+                title = "Bem-vindo ao $appName",
                 subtitle = "Seu ambiente completo para escrita e desenvolvimento de histórias.",
                 modifier = Modifier.padding(bottom = LivroHubTheme.spacing.xxl)
             )

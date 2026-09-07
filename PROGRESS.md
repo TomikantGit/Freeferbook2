@@ -224,6 +224,17 @@
 - Icones de retorno/revisao deprecated foram migrados para variantes `AutoMirrored`.
 - `ARCHITECTURE.md` foi reescrito para documentar schema v6, navegacao tipada, DI, updater isolado e regras para novas features.
 
+## Modulo 17 — Organizacao das configuracoes e identidade visual (2026-09-07)
+
+- O nome visivel do app passou a ser `Freeferbook` via `@string/app_name`; a Home deixou de manter `LivroHub` hardcoded e agora reutiliza o recurso de nome do aplicativo.
+- A tela de Configuracoes foi reorganizada em tres categorias de alto nivel: `Aparencia`, `Funcionalidades` e `Extras`.
+- `Aparencia` concentra tema/cores, tipografia, layout/componentes e animacoes/movimento.
+- `Funcionalidades` concentra comportamento do editor e disponibilidade das areas de Personagens e Locais no workspace.
+- `Extras` concentra os controles para reexibir tutoriais e o canal de atualizacoes de teste.
+- Cada categoria usa um card proprio com descricao e subsecoes internas, deixando a tela preparada para novas configuracoes sem voltar a uma lista unica extensa.
+- Removido helper de preview que ficou sem uso apos a reorganizacao.
+- `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` executados com sucesso apos a reorganizacao inicial.
+
 ## Observacoes
 
 - O ambiente local atual possui Java/Android SDK suficientes para `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` em modo offline.
