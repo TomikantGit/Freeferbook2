@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$Repositorio = "TomikantGit/Freeferbook2"
 )
 
@@ -34,14 +34,14 @@ function Resolve-Gh {
     $knownPath = "C:\Program Files\GitHub CLI\gh.exe"
     if (Test-Path -LiteralPath $knownPath) { return $knownPath }
 
-    throw "GitHub CLI (gh) não encontrado. Instale-o antes de continuar."
+    throw "GitHub CLI (gh) nÃ£o encontrado. Instale-o antes de continuar."
 }
 
 if (-not (Test-Path -LiteralPath $bundlePath)) {
     $password = New-StrongPassword
     $alias = "freeferbook-public-test"
 
-    & keytool -genkeypair `
+    & "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe" -genkeypair `
         -keystore $keystorePath `
         -storetype PKCS12 `
         -storepass $password `
@@ -72,20 +72,21 @@ if (-not (Test-Path -LiteralPath $bundlePath)) {
 $gh = Resolve-Gh
 & $gh auth status | Out-Null
 if ($LASTEXITCODE -ne 0) {
-    throw "GitHub CLI não está autenticado. Execute 'gh auth login' e tente novamente."
+    throw "GitHub CLI nÃ£o estÃ¡ autenticado. Execute 'gh auth login' e tente novamente."
 }
 
 $bundleValue = [IO.File]::ReadAllText($bundlePath).Trim()
 if ([string]::IsNullOrWhiteSpace($bundleValue)) {
-    throw "O bundle local de assinatura está vazio."
+    throw "O bundle local de assinatura estÃ¡ vazio."
 }
 
 $bundleValue | & $gh secret set TEST_SIGNING_BUNDLE --repo $Repositorio
 if ($LASTEXITCODE -ne 0) {
-    throw "Não foi possível cadastrar TEST_SIGNING_BUNDLE no GitHub."
+    throw "NÃ£o foi possÃ­vel cadastrar TEST_SIGNING_BUNDLE no GitHub."
 }
 
 Write-Host ""
-Write-Host "Assinatura pública de teste configurada com sucesso." -ForegroundColor Green
-Write-Host "O material privado ficou somente em .private/ e não deve ser enviado ao Git."
-Write-Host "Agora execute o workflow Android Test Release ou faça um novo push em main."
+Write-Host "Assinatura pÃºblica de teste configurada com sucesso." -ForegroundColor Green
+Write-Host "O material privado ficou somente em .private/ e nÃ£o deve ser enviado ao Git."
+Write-Host "Agora execute o workflow Android Test Release ou faÃ§a um novo push em main."
+
