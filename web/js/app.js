@@ -16,6 +16,7 @@ const elements = {
     noChapterView: $("#noChapterView"),
     chapterEditorView: $("#chapterEditorView"),
     editor: $("#editor"),
+    lineNumberGutter: $("#lineNumberGutter"),
     editorStats: $("#editorStats"),
     draftStatus: $("#draftStatus"),
     previewContent: $("#previewContent"),
@@ -52,8 +53,31 @@ const elements = {
     textDialogHint: $("#textDialogHint"),
     confirmDialog: $("#confirmDialog"),
     confirmDialogTitle: $("#confirmDialogTitle"),
-    confirmDialogText: $("#confirmDialogText")
+    confirmDialogText: $("#confirmDialogText"),
+    settingsDialog: $("#settingsDialog"),
+    webTheme: $("#webTheme"),
+    editorFontSize: $("#editorFontSize"),
+    editorFontSizeValue: $("#editorFontSizeValue"),
+    editorLineHeight: $("#editorLineHeight"),
+    editorLineHeightValue: $("#editorLineHeightValue"),
+    showLineNumbers: $("#showLineNumbers"),
+    showCharactersTab: $("#showCharactersTab"),
+    showLocationsTab: $("#showLocationsTab"),
+    reducedMotion: $("#reducedMotion"),
+    settingsWebVersion: $("#settingsWebVersion"),
+    settingsAndroidVersion: $("#settingsAndroidVersion")
 };
+
+const WEB_SETTINGS_KEY = "freeferbook-web-settings-v1";
+const DEFAULT_WEB_SETTINGS = Object.freeze({
+    theme: "system",
+    editorFontSize: 17,
+    editorLineHeight: 1.7,
+    showLineNumbers: true,
+    showCharactersTab: true,
+    showLocationsTab: true,
+    reducedMotion: false
+});
 
 let projects = [];
 let currentProject = null;
@@ -63,6 +87,63 @@ let workspaceMode = "chapters";
 let viewMode = "edit";
 let persistTimer = null;
 let toastTimer = null;
+let webSettings = loadWebSettings();
+
+function loadWebSettings() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(WEB_SETTINGS_KEY) ?? "null");
+        return { ...DEFAULT_WEB_SETTINGS, ...(parsed && typeof parsed === "object" ? parsed : {}) };
+    } catch (_) {
+        return { ...DEFAULT_WEB_SETTINGS };
+    }
+}
+
+function storeWebSettings() {
+    try { localStorage.setItem(WEB_SETTINGS_KEY, JSON.stringify(webSettings)); }
+    catch (_) { /* preferir funcionamento da UI mesmo com storage restrito */ }
+}
+
+function syncSettingsControls() {
+    elements.webTheme.value = webSettings.theme;
+    elements.editorFontSize.value = String(webSettings.editorFontSize);
+    elements.editorFontSizeValue.textContent = `${webSettings.editorFontSize}px`;
+    elements.editorLineHeight.value = String(webSettings.editorLineHeight);
+    elements.editorLineHeightValue.textContent = Number(webSettings.editorLineHeight).toFixed(1);
+    elements.showLineNumbers.checked = Boolean(webSettings.showLineNumbers);
+    elements.showCharactersTab.checked = Boolean(webSettings.showCharactersTab);
+    elements.showLocationsTab.checked = Boolean(webSettings.showLocationsTab);
+    elements.reducedMotion.checked = Boolean(webSettings.reducedMotion);
+}
+
+function applyWebSettings({ rerenderIfNeeded = true } = {}) {
+    const root = document.documentElement;
+    if (webSettings.theme === "system") delete root.dataset.theme;
+    else root.dataset.theme = webSettings.theme;
+    root.dataset.reducedMotion = String(Boolean(webSettings.reducedMotion));
+    root.style.setProperty("--editor-font-size", `${Number(webSettings.editorFontSize) || 17}px`);
+    root.style.setProperty("--editor-line-height", String(Number(webSettings.editorLineHeight) || 1.7));
+
+    document.querySelector('[data-workspace-mode="characters"]')?.classList.toggle("hidden", !webSettings.showCharactersTab);
+    document.querySelector('[data-workspace-mode="locations"]')?.classList.toggle("hidden", !webSettings.showLocationsTab);
+    elements.lineNumberGutter.classList.toggle("hidden", !webSettings.showLineNumbers);
+    syncSettingsControls();
+    updateLineNumbers();
+
+    const hiddenCurrentMode =
+        (workspaceMode === "characters" && !webSettings.showCharactersTab) ||
+        (workspaceMode === "locations" && !webSettings.showLocationsTab);
+    if (hiddenCurrentMode) {
+        workspaceMode = "chapters";
+        selectedWorldbuildingId = null;
+        if (rerenderIfNeeded && currentProject) renderWorkspace();
+    }
+}
+
+function updateWebSetting(key, value) {
+    webSettings = { ...webSettings, [key]: value };
+    storeWebSettings();
+    applyWebSettings();
+}
 
 function currentChapter() {
     return currentProject?.chapters?.find(chapter => chapter.id === selectedChapterId) ?? null;
@@ -336,6 +417,8 @@ function selectChapter(id) {
 
 function switchWorkspaceMode(mode) {
     if (!currentProject || !["chapters", "characters", "locations"].includes(mode)) return;
+    if (mode === "characters" && !webSettings.showCharactersTab) return;
+    if (mode === "locations" && !webSettings.showLocationsTab) return;
     workspaceMode = mode;
     viewMode = "edit";
     if (mode === "chapters") {
@@ -358,6 +441,15 @@ function updateEditorMeta() {
     const dirty = hasUnsavedChanges(chapter);
     elements.draftStatus.textContent = dirty ? "Alterações não salvas" : "Versão salva";
     elements.draftStatus.style.color = dirty ? "var(--primary)" : "var(--muted)";
+    updateLineNumbers();
+}
+
+function updateLineNumbers() {
+    if (!elements.lineNumberGutter) return;
+    const chapter = currentChapter();
+    const count = Math.max(1, (chapter?.draftContent ?? "").split(/\r?\n/).length);
+    elements.lineNumberGutter.textContent = Array.from({ length: count }, (_, index) => index + 1).join("\n");
+    elements.lineNumberGutter.scrollTop = elements.editor?.scrollTop ?? 0;
 }
 
 function renderWorldbuildingEditor(item) {
@@ -700,6 +792,8 @@ async function loadReleaseInfo() {
     $("#welcomeWebCommit").textContent = webCommit;
     $("#welcomeAndroidVersion").textContent = androidVersion;
     $("#welcomeAndroidCommit").textContent = androidCommit;
+    elements.settingsWebVersion.textContent = web?.shortSha ? `${webVersion} • ${web.shortSha}` : webVersion;
+    elements.settingsAndroidVersion.textContent = androidVersion;
 }
 
 function bindEvents() {
@@ -727,6 +821,21 @@ function bindEvents() {
         updateEditorMeta();
         schedulePersist();
     });
+    elements.editor.addEventListener("scroll", () => {
+        elements.lineNumberGutter.scrollTop = elements.editor.scrollTop;
+    });
+
+    $("#settingsButton").addEventListener("click", () => {
+        syncSettingsControls();
+        elements.settingsDialog.showModal();
+    });
+    elements.webTheme.addEventListener("change", event => updateWebSetting("theme", event.target.value));
+    elements.editorFontSize.addEventListener("input", event => updateWebSetting("editorFontSize", Number(event.target.value)));
+    elements.editorLineHeight.addEventListener("input", event => updateWebSetting("editorLineHeight", Number(event.target.value)));
+    elements.showLineNumbers.addEventListener("change", event => updateWebSetting("showLineNumbers", event.target.checked));
+    elements.showCharactersTab.addEventListener("change", event => updateWebSetting("showCharactersTab", event.target.checked));
+    elements.showLocationsTab.addEventListener("change", event => updateWebSetting("showLocationsTab", event.target.checked));
+    elements.reducedMotion.addEventListener("change", event => updateWebSetting("reducedMotion", event.target.checked));
 
     document.querySelectorAll("[data-view-mode]").forEach(button => button.addEventListener("click", () => switchViewMode(button.dataset.viewMode)));
 
@@ -748,6 +857,7 @@ function bindEvents() {
 }
 
 async function init() {
+    applyWebSettings({ rerenderIfNeeded: false });
     bindEvents();
     try {
         projects = await listProjects();

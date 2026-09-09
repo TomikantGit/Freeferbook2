@@ -13,6 +13,9 @@
     --primary-soft: #eee2ff;
     --danger: #b3261e;
     --shadow: 0 10px 30px rgba(26, 14, 44, 0.08);
+    --editor-font-size: 17px;
+    --editor-line-height: 1.7;
+    --editor-pad-y: clamp(18px, 4vw, 44px);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -31,6 +34,47 @@
         --danger: #ffb4ab;
         --shadow: 0 14px 38px rgba(0, 0, 0, 0.28);
     }
+}
+
+:root[data-theme="light"] {
+    color: #1c1b1f;
+    background: #f8f7fb;
+    --bg: #f8f7fb;
+    --surface: #ffffff;
+    --surface-2: #f1eff6;
+    --border: #ded9e7;
+    --text: #1c1b1f;
+    --muted: #706b78;
+    --primary: #6f2dbd;
+    --primary-strong: #58209d;
+    --primary-soft: #eee2ff;
+    --danger: #b3261e;
+    --shadow: 0 10px 30px rgba(26, 14, 44, 0.08);
+}
+
+:root[data-theme="dark"] {
+    color: #f2edf5;
+    background: #111014;
+    --bg: #111014;
+    --surface: #19171d;
+    --surface-2: #242128;
+    --border: #39343f;
+    --text: #f2edf5;
+    --muted: #b8b0bf;
+    --primary: #c89aff;
+    --primary-strong: #d9b8ff;
+    --primary-soft: #332048;
+    --danger: #ffb4ab;
+    --shadow: 0 14px 38px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-reduced-motion="true"] *,
+:root[data-reduced-motion="true"] *::before,
+:root[data-reduced-motion="true"] *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
 }
 
 * { box-sizing: border-box; }
@@ -190,19 +234,43 @@ button { cursor: pointer; }
 .segment.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
 .mode-pane { height: 100%; min-height: 0; overflow: auto; }
 
-.editor-textarea {
-    width: 100%;
+.editor-input-shell {
     height: calc(100% - 38px);
     min-height: 300px;
+    display: flex;
+    overflow: hidden;
+    background: var(--bg);
+}
+.line-number-gutter {
+    width: 52px;
+    flex: 0 0 52px;
+    margin: 0;
+    padding: var(--editor-pad-y) 10px var(--editor-pad-y) 4px;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
+    color: var(--muted);
+    background: var(--surface-2);
+    text-align: right;
+    user-select: none;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: var(--editor-font-size);
+    line-height: var(--editor-line-height);
+    white-space: pre;
+}
+.editor-textarea {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
     resize: none;
     border: 0;
     outline: 0;
-    padding: clamp(18px, 4vw, 44px);
+    padding: var(--editor-pad-y) clamp(18px, 4vw, 44px);
     background: var(--bg);
     color: var(--text);
     font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif;
-    font-size: 1.08rem;
-    line-height: 1.7;
+    font-size: var(--editor-font-size);
+    line-height: var(--editor-line-height);
 }
 .editor-meta { height: 38px; padding: 0 18px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 20px; color: var(--muted); font-size: .78rem; }
 
@@ -271,6 +339,31 @@ button { cursor: pointer; }
 .app-dialog input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
 .dialog-actions { justify-content: flex-end; gap: 8px; margin-top: 20px; }
 
+.settings-dialog { width: min(680px, calc(100vw - 28px)); max-height: min(820px, calc(100vh - 30px)); overflow: auto; }
+.settings-dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.settings-dialog-header h2 { margin: 4px 0 0; }
+.settings-node { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); margin-top: 10px; overflow: hidden; }
+.settings-node summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 16px; }
+.settings-node summary::-webkit-details-marker { display: none; }
+.settings-node summary > span:first-child { display: grid; gap: 3px; }
+.settings-node summary strong { color: var(--primary); font-size: 1rem; }
+.settings-node summary small { color: var(--muted); font-size: .78rem; font-weight: 400; }
+.settings-chevron { color: var(--muted); font-size: 1.25rem; transition: transform .16s ease; }
+.settings-node[open] .settings-chevron { transform: rotate(180deg); }
+.settings-node-content { border-top: 1px solid var(--border); display: grid; }
+.settings-control { display: flex !important; align-items: center; justify-content: space-between; gap: 18px; padding: 13px 16px; border-bottom: 1px solid var(--border); margin: 0 !important; }
+.settings-control:last-child { border-bottom: 0; }
+.settings-control > span { display: grid; gap: 3px; }
+.settings-control small { color: var(--muted); font-weight: 400; line-height: 1.35; }
+.settings-control select { min-width: 130px; min-height: 38px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg); color: var(--text); padding: 6px 9px; }
+.settings-control input[type="checkbox"] { width: 20px; height: 20px; min-height: 0; flex: 0 0 auto; accent-color: var(--primary); box-shadow: none; }
+.settings-range-control > div { min-width: 190px; display: flex; align-items: center; gap: 10px; }
+.settings-range-control input[type="range"] { width: 145px; min-height: 0; padding: 0; border: 0; box-shadow: none; accent-color: var(--primary); }
+.settings-range-control output { min-width: 42px; color: var(--primary); font-weight: 750; text-align: right; }
+.settings-release-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 14px 16px; }
+.settings-release-info > div { display: grid; gap: 3px; padding: 10px; border-radius: 10px; background: var(--surface-2); }
+.settings-download-link { margin: 0 16px 16px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+
 .mobile-only { display: none; }
 
 @media (max-width: 900px) {
@@ -296,4 +389,8 @@ button { cursor: pointer; }
     .workspace-tab { font-size: .66rem; padding-inline: 3px; }
     .worldbuilding-editor { padding: 18px 14px 50px; }
     .worldbuilding-form { padding: 16px; }
+    .settings-control { align-items: flex-start; flex-direction: column; }
+    .settings-range-control > div { width: 100%; min-width: 0; }
+    .settings-range-control input[type="range"] { flex: 1; width: auto; }
+    .settings-release-info { grid-template-columns: 1fr; }
 }

@@ -24,6 +24,7 @@
         <div class="sidebar-actions">
             <button class="primary-button" id="newBookButton">+ Novo livro</button>
             <button class="secondary-button" id="importBookButton">Importar backup</button>
+            <button class="secondary-button" id="settingsButton">Configurações</button>
             <input id="importBookInput" type="file" accept=".zip,.freeferbook,application/zip,application/octet-stream" hidden>
         </div>
 
@@ -118,7 +119,10 @@
                     </div>
 
                     <div id="editPane" class="mode-pane">
-                        <textarea id="editor" class="editor-textarea" spellcheck="true" placeholder="Comece a escrever…"></textarea>
+                        <div class="editor-input-shell">
+                            <pre id="lineNumberGutter" class="line-number-gutter" aria-hidden="true">1</pre>
+                            <textarea id="editor" class="editor-textarea" spellcheck="true" placeholder="Comece a escrever…"></textarea>
+                        </div>
                         <div class="editor-meta">
                             <span id="editorStats">0 palavras • 0 linhas • 0 caracteres</span>
                             <span>Rascunho salvo automaticamente no navegador</span>
@@ -202,6 +206,82 @@
             <button value="cancel" class="secondary-button">Cancelar</button>
             <button value="confirm" class="danger-button">Confirmar</button>
         </div>
+    </form>
+</dialog>
+
+<dialog id="settingsDialog" class="app-dialog settings-dialog">
+    <form method="dialog">
+        <div class="settings-dialog-header">
+            <div>
+                <div class="section-label">Freeferbook Web</div>
+                <h2>Configurações</h2>
+            </div>
+            <button value="close" class="icon-button" aria-label="Fechar configurações">×</button>
+        </div>
+
+        <details class="settings-node">
+            <summary>
+                <span><strong>Aparência</strong><small>Tema e tipografia do editor.</small></span>
+                <span class="settings-chevron">⌄</span>
+            </summary>
+            <div class="settings-node-content">
+                <label class="settings-control">
+                    <span><strong>Tema</strong><small>Segue o sistema ou força modo claro/escuro.</small></span>
+                    <select id="webTheme">
+                        <option value="system">Sistema</option>
+                        <option value="light">Claro</option>
+                        <option value="dark">Escuro</option>
+                    </select>
+                </label>
+                <label class="settings-control settings-range-control">
+                    <span><strong>Tamanho do texto</strong><small>Texto do editor em pixels.</small></span>
+                    <div><input id="editorFontSize" type="range" min="14" max="24" step="1"><output id="editorFontSizeValue"></output></div>
+                </label>
+                <label class="settings-control settings-range-control">
+                    <span><strong>Altura da linha</strong><small>Espaçamento vertical do manuscrito.</small></span>
+                    <div><input id="editorLineHeight" type="range" min="1.2" max="2.2" step="0.1"><output id="editorLineHeightValue"></output></div>
+                </label>
+            </div>
+        </details>
+
+        <details class="settings-node">
+            <summary>
+                <span><strong>Funcionalidades</strong><small>Editor e áreas disponíveis no workspace.</small></span>
+                <span class="settings-chevron">⌄</span>
+            </summary>
+            <div class="settings-node-content">
+                <label class="settings-control">
+                    <span><strong>Números de linha</strong><small>Exibe a numeração ao lado do editor.</small></span>
+                    <input id="showLineNumbers" type="checkbox">
+                </label>
+                <label class="settings-control">
+                    <span><strong>Exibir Personagens</strong><small>Mantém a área de personagens visível.</small></span>
+                    <input id="showCharactersTab" type="checkbox">
+                </label>
+                <label class="settings-control">
+                    <span><strong>Exibir Locais</strong><small>Mantém a área de locais visível.</small></span>
+                    <input id="showLocationsTab" type="checkbox">
+                </label>
+            </div>
+        </details>
+
+        <details class="settings-node">
+            <summary>
+                <span><strong>Extras</strong><small>Acessibilidade, versões e canal Android.</small></span>
+                <span class="settings-chevron">⌄</span>
+            </summary>
+            <div class="settings-node-content">
+                <label class="settings-control">
+                    <span><strong>Reduzir movimento</strong><small>Desativa transições não essenciais.</small></span>
+                    <input id="reducedMotion" type="checkbox">
+                </label>
+                <div class="settings-release-info">
+                    <div><span class="muted small">Web</span><strong id="settingsWebVersion">—</strong></div>
+                    <div><span class="muted small">Android</span><strong id="settingsAndroidVersion">—</strong></div>
+                </div>
+                <a class="secondary-button settings-download-link" href="freeferbook-test.apk">Baixar APK Android</a>
+            </div>
+        </details>
     </form>
 </dialog>
 

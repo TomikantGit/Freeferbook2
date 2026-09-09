@@ -312,6 +312,17 @@
 - Smoke test em Chrome real validou criacao/edicao de livro, personagem e local usando a interface Web, IndexedDB e eventos reais do navegador.
 - `node --check`, validador do contrato, `testDebugUnitTest`, `assembleDebug` e `git diff --check` passaram localmente.
 
+## Modulo 25 — Configuracoes Web recolhiveis (2026-09-09)
+
+- A Web ganhou uma tela de Configuracoes com os mesmos tres nos de alto nivel do Android: `Aparencia`, `Funcionalidades` e `Extras`, todos fechados por padrao.
+- `Aparencia` controla tema (sistema/claro/escuro), tamanho do texto do editor e altura da linha.
+- `Funcionalidades` controla numeros de linha e a visibilidade das areas de Personagens e Locais.
+- `Extras` controla reducao de movimento e exibe as versoes Web/Android publicadas, alem do atalho para baixar o APK.
+- Preferencias Web sao persistidas em `localStorage` (`freeferbook-web-settings-v1`) e reaplicadas no carregamento sem misturar configuracoes do navegador com os dados/backup do livro.
+- O editor Web ganhou gutter de numeros de linha sincronizado com o scroll e com a quantidade de linhas logicas do rascunho.
+- Tema/tipografia sao aplicados por CSS custom properties; ocultar Personagens/Locais remove a aba visual sem excluir os dados existentes.
+- Smoke test em Chrome real confirmou nos inicialmente recolhidos, numeros de linha, tema escuro, tamanho de fonte, ocultacao de Personagens e persistencia das preferencias apos `reload`.
+
 ## Observacoes
 
 - O ambiente local atual possui Java/Android SDK suficientes para `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` em modo offline.

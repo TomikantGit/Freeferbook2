@@ -202,6 +202,10 @@ UI Web
 
 O navegador guarda os dados localmente. Não há sincronização em nuvem nesta fase; para mover conteúdo entre Android/Web, usar o backup compatível.
 
+Preferências Web ficam separadas dos projetos em `localStorage` (`freeferbook-web-settings-v1`). Elas controlam apenas apresentação/comportamento local do navegador e não entram no backup do livro. As categorias seguem o mesmo agrupamento conceitual do Android (`Aparência`, `Funcionalidades`, `Extras`) e iniciam recolhidas.
+
+No editor Web, números de linha são derivados das quebras reais do rascunho e o gutter acompanha o `scrollTop` do `textarea`. Tema, tamanho do texto, altura de linha, visibilidade de Personagens/Locais e redução de movimento são aplicados via atributos/CSS custom properties, sem recarregar a aplicação.
+
 Contrato de interoperabilidade atual:
 
 ```text
@@ -357,3 +361,4 @@ scripts/
 10. Alterações no formato de backup devem ser implementadas/testadas em Android e Web antes de incrementar `schemaVersion`.
 11. A futura versão Desktop deve entrar somente depois de estabilizar os contratos Web/Android; priorizar extração gradual de regras puras para Kotlin Multiplatform, não uma migração total de uma vez.
 12. Mudança no formato de backup: manter compatibilidade retroativa quando possível e atualizar a fixture/validador junto da implementação.
+13. Configurações específicas da Web não devem alterar silenciosamente o contrato de backup; preferências de navegador permanecem locais salvo quando houver um contrato multiplataforma explícito.
