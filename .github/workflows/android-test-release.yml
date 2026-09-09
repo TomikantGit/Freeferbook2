@@ -143,14 +143,14 @@ jobs:
           EOF
 
       - name: Guardar artefato do workflow
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: freeferbook-test
           path: update-site/freeferbook-test.apk
           retention-days: 14
 
       - name: Preparar artefato do GitHub Pages
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           path: update-site
 
