@@ -299,6 +299,19 @@
 - O fluxo automatico reaproveita `TestUpdateManager`, mantendo download, validacao SHA-256 e instalacao confirmada pelo Android.
 - `compileDebugKotlin`, `testDebugUnitTest`, `assembleDebug`, `publicTestBuild`, verificacao sintatica dos modulos JavaScript e `git diff --check` foram executados com sucesso.
 
+## Modulo 24 — Convergencia Web/Android e contrato de backup (2026-09-09)
+
+- A Web passou a oferecer tres areas por livro: `Capitulos`, `Personagens` e `Locais`, aproximando o workspace do comportamento Android.
+- Personagens podem ser criados, selecionados, editados e excluidos com nome, sobrenomes, capitulos e referencia de imagem.
+- Locais podem ser criados, selecionados, editados e excluidos com nome, descricao, capitulos e referencia de imagem.
+- As alteracoes de worldbuilding sao salvas automaticamente no IndexedDB e continuam entrando no mesmo backup completo ja compativel com Android.
+- Ao alterar manualmente a referencia de imagem de um item importado, a associacao com a midia incorporada anterior e descartada para evitar exportar imagem divergente do novo valor.
+- Criada fixture canonica `contracts/book-backup-v1.sample.json` para o contrato `freeferbook-book-backup/schemaVersion = 1`.
+- Criado `scripts/validate-backup-contract.mjs`, que compara as constantes Android/Web com a fixture e executa round-trip Web -> ZIP -> Web.
+- O GitHub Actions agora valida esse contrato antes de configurar Java/compilar o APK, fazendo a release falhar cedo se Android e Web divergirem.
+- Smoke test em Chrome real validou criacao/edicao de livro, personagem e local usando a interface Web, IndexedDB e eventos reais do navegador.
+- `node --check`, validador do contrato, `testDebugUnitTest`, `assembleDebug` e `git diff --check` passaram localmente.
+
 ## Observacoes
 
 - O ambiente local atual possui Java/Android SDK suficientes para `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` em modo offline.

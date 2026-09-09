@@ -78,19 +78,25 @@
             <aside class="chapter-panel">
                 <div class="chapter-panel-header">
                     <div>
-                        <div class="section-label">Capítulos</div>
+                        <div class="section-label" id="workspaceCollectionLabel">Capítulos</div>
                         <div id="bookTitleInWorkspace" class="book-title-workspace"></div>
                     </div>
-                    <button class="icon-button" id="newChapterButton" title="Novo capítulo" aria-label="Novo capítulo">+</button>
+                    <button class="icon-button" id="newWorkspaceItemButton" title="Novo capítulo" aria-label="Novo capítulo">+</button>
+                </div>
+
+                <div class="workspace-tabs" role="tablist" aria-label="Áreas do livro">
+                    <button class="workspace-tab active" data-workspace-mode="chapters">Capítulos</button>
+                    <button class="workspace-tab" data-workspace-mode="characters">Personagens</button>
+                    <button class="workspace-tab" data-workspace-mode="locations">Locais</button>
                 </div>
                 <div id="chapterList" class="chapter-list"></div>
             </aside>
 
             <div class="editor-panel">
                 <div id="noChapterView" class="empty-editor">
-                    <h2>Nenhum capítulo selecionado</h2>
-                    <p>Crie ou escolha um capítulo na lista ao lado.</p>
-                    <button class="primary-button" id="emptyNewChapterButton">Criar capítulo</button>
+                    <h2 id="emptyWorkspaceTitle">Nenhum capítulo selecionado</h2>
+                    <p id="emptyWorkspaceText">Crie ou escolha um capítulo na lista ao lado.</p>
+                    <button class="primary-button" id="emptyNewWorkspaceItemButton">Criar capítulo</button>
                 </div>
 
                 <div id="chapterEditorView" class="chapter-editor hidden">
@@ -126,6 +132,47 @@
                     <div id="historyPane" class="mode-pane hidden">
                         <div id="historyList" class="history-list"></div>
                     </div>
+                </div>
+
+                <div id="worldbuildingEditorView" class="worldbuilding-editor hidden">
+                    <div class="worldbuilding-header">
+                        <div>
+                            <div class="section-label" id="worldbuildingKindLabel">Personagem</div>
+                            <h2 id="worldbuildingTitle">Novo personagem</h2>
+                        </div>
+                        <button class="danger-button compact" id="deleteWorldbuildingButton">Excluir</button>
+                    </div>
+
+                    <form id="worldbuildingForm" class="worldbuilding-form" autocomplete="off">
+                        <label>
+                            <span>Nome</span>
+                            <input id="worldbuildingName" required maxlength="160">
+                        </label>
+
+                        <label id="characterSurnamesField">
+                            <span>Sobrenomes</span>
+                            <input id="worldbuildingSurnames" maxlength="240">
+                        </label>
+
+                        <label id="locationDescriptionField" class="hidden">
+                            <span>Descrição</span>
+                            <textarea id="worldbuildingDescription" rows="7" maxlength="4000"></textarea>
+                        </label>
+
+                        <label>
+                            <span>Capítulos</span>
+                            <input id="worldbuildingChapters" maxlength="400" placeholder="Ex.: 1, 3-5">
+                            <small class="muted">Campo livre, compatível com o Android.</small>
+                        </label>
+
+                        <label>
+                            <span>Imagem / URL</span>
+                            <input id="worldbuildingImageUri" maxlength="2000" placeholder="https://… ou referência importada">
+                            <small class="muted">Backups preservam a referência e mídias incorporadas quando disponíveis.</small>
+                        </label>
+
+                        <div class="worldbuilding-save-state muted small" id="worldbuildingSaveState">Salvo automaticamente neste navegador.</div>
+                    </form>
                 </div>
             </div>
         </section>

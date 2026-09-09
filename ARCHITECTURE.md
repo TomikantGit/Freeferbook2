@@ -246,6 +246,15 @@ backup.zip
 
 O `manifest.json` usa `format = freeferbook-book-backup` e `schemaVersion = 1`. O número da versão do formato é independente da versão do banco Room e deve ser incrementado somente quando o contrato do backup mudar de forma incompatível.
 
+O contrato possui uma fixture canônica em `contracts/book-backup-v1.sample.json`. O script `scripts/validate-backup-contract.mjs` é executado no GitHub Actions e verifica simultaneamente:
+
+- `FORMAT_ID` e `SCHEMA_VERSION` do Android;
+- `FORMAT_ID` e `SCHEMA_VERSION` da Web;
+- estrutura mínima da fixture;
+- round-trip Web → ZIP → Web usando o mesmo contrato.
+
+Esse teste deve falhar antes do build quando uma plataforma mudar o formato sem atualizar as demais.
+
 O backup inclui:
 
 - livro e timestamp original;
@@ -326,6 +335,12 @@ web/
    ├─ db.js
    ├─ markdown.js
    └─ archive.js
+
+contracts/
+└─ book-backup-v1.sample.json
+
+scripts/
+└─ validate-backup-contract.mjs
 ```
 
 ## Regras para novas implementações
@@ -341,4 +356,4 @@ web/
 9. Toda refatoração relevante deve fechar com `testDebugUnitTest` + `assembleDebug`.
 10. Alterações no formato de backup devem ser implementadas/testadas em Android e Web antes de incrementar `schemaVersion`.
 11. A futura versão Desktop deve entrar somente depois de estabilizar os contratos Web/Android; priorizar extração gradual de regras puras para Kotlin Multiplatform, não uma migração total de uma vez.
-10. Mudança no formato de backup: manter compatibilidade retroativa quando possível e incrementar `schemaVersion` quando necessário.
+12. Mudança no formato de backup: manter compatibilidade retroativa quando possível e atualizar a fixture/validador junto da implementação.

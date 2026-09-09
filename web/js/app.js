@@ -25,6 +25,24 @@ const elements = {
     historyPane: $("#historyPane"),
     saveVersionButton: $("#saveVersionButton"),
     chapterMenu: $("#chapterMenu"),
+    workspaceCollectionLabel: $("#workspaceCollectionLabel"),
+    newWorkspaceItemButton: $("#newWorkspaceItemButton"),
+    emptyWorkspaceTitle: $("#emptyWorkspaceTitle"),
+    emptyWorkspaceText: $("#emptyWorkspaceText"),
+    emptyNewWorkspaceItemButton: $("#emptyNewWorkspaceItemButton"),
+    worldbuildingEditorView: $("#worldbuildingEditorView"),
+    worldbuildingKindLabel: $("#worldbuildingKindLabel"),
+    worldbuildingTitle: $("#worldbuildingTitle"),
+    worldbuildingForm: $("#worldbuildingForm"),
+    worldbuildingName: $("#worldbuildingName"),
+    worldbuildingSurnames: $("#worldbuildingSurnames"),
+    worldbuildingDescription: $("#worldbuildingDescription"),
+    worldbuildingChapters: $("#worldbuildingChapters"),
+    worldbuildingImageUri: $("#worldbuildingImageUri"),
+    characterSurnamesField: $("#characterSurnamesField"),
+    locationDescriptionField: $("#locationDescriptionField"),
+    deleteWorldbuildingButton: $("#deleteWorldbuildingButton"),
+    worldbuildingSaveState: $("#worldbuildingSaveState"),
     importInput: $("#importBookInput"),
     toast: $("#toast"),
     textDialog: $("#textDialog"),
@@ -40,12 +58,47 @@ const elements = {
 let projects = [];
 let currentProject = null;
 let selectedChapterId = null;
+let selectedWorldbuildingId = null;
+let workspaceMode = "chapters";
 let viewMode = "edit";
 let persistTimer = null;
 let toastTimer = null;
 
 function currentChapter() {
     return currentProject?.chapters?.find(chapter => chapter.id === selectedChapterId) ?? null;
+}
+
+function currentWorldbuildingItem() {
+    if (!currentProject || workspaceMode === "chapters") return null;
+    return (currentProject[workspaceMode] ?? []).find(item => item.id === selectedWorldbuildingId) ?? null;
+}
+
+function workspaceConfig() {
+    if (workspaceMode === "characters") {
+        return {
+            singular: "personagem",
+            singularTitle: "Personagem",
+            plural: "Personagens",
+            emptyTitle: "Nenhum personagem selecionado",
+            emptyText: "Crie ou escolha um personagem na lista ao lado."
+        };
+    }
+    if (workspaceMode === "locations") {
+        return {
+            singular: "local",
+            singularTitle: "Local",
+            plural: "Locais",
+            emptyTitle: "Nenhum local selecionado",
+            emptyText: "Crie ou escolha um local na lista ao lado."
+        };
+    }
+    return {
+        singular: "capítulo",
+        singularTitle: "Capítulo",
+        plural: "Capítulos",
+        emptyTitle: "Nenhum capítulo selecionado",
+        emptyText: "Crie ou escolha um capítulo na lista ao lado."
+    };
 }
 
 function formatDate(timestamp) {
@@ -143,6 +196,37 @@ function renderChapterList() {
     });
 }
 
+function renderWorldbuildingList() {
+    elements.chapterList.replaceChildren();
+    if (!currentProject || workspaceMode === "chapters") return;
+    const items = currentProject[workspaceMode] ?? [];
+    const config = workspaceConfig();
+
+    if (!items.length) {
+        const empty = document.createElement("div");
+        empty.className = "muted small";
+        empty.textContent = `Nenhum ${config.singular}.`;
+        elements.chapterList.append(empty);
+        return;
+    }
+
+    for (const item of items) {
+        const button = document.createElement("button");
+        button.className = `chapter-item${selectedWorldbuildingId === item.id ? " active" : ""}`;
+        button.innerHTML = `<span class="chapter-item-title"></span><span class="chapter-item-meta"></span>`;
+        button.querySelector(".chapter-item-title").textContent = item.name || `Sem nome`;
+        const detail = workspaceMode === "characters"
+            ? [item.surnames, item.chapters ? `cap. ${item.chapters}` : ""].filter(Boolean).join(" • ")
+            : [item.description, item.chapters ? `cap. ${item.chapters}` : ""].filter(Boolean).join(" • ");
+        button.querySelector(".chapter-item-meta").textContent = detail || config.singularTitle;
+        button.addEventListener("click", () => {
+            selectedWorldbuildingId = item.id;
+            renderWorkspace();
+        });
+        elements.chapterList.append(button);
+    }
+}
+
 function renderTopbar() {
     elements.topbarActions.replaceChildren();
     if (!currentProject) {
@@ -175,6 +259,8 @@ function renderTopbar() {
             projects = projects.filter(project => project.id !== id);
             currentProject = null;
             selectedChapterId = null;
+            selectedWorldbuildingId = null;
+            workspaceMode = "chapters";
             renderAll();
             showToast("Livro excluído deste navegador.");
         }
@@ -190,15 +276,37 @@ function renderWorkspace() {
     if (!hasProject) return;
 
     elements.bookTitleInWorkspace.textContent = currentProject.title;
-    renderChapterList();
-    const chapter = currentChapter();
-    elements.noChapterView.classList.toggle("hidden", Boolean(chapter));
-    elements.chapterEditorView.classList.toggle("hidden", !chapter);
-    if (!chapter) return;
+    const config = workspaceConfig();
+    elements.workspaceCollectionLabel.textContent = config.plural;
+    elements.newWorkspaceItemButton.title = `Novo ${config.singular}`;
+    elements.newWorkspaceItemButton.setAttribute("aria-label", `Novo ${config.singular}`);
+    elements.emptyWorkspaceTitle.textContent = config.emptyTitle;
+    elements.emptyWorkspaceText.textContent = config.emptyText;
+    elements.emptyNewWorkspaceItemButton.textContent = `Criar ${config.singular}`;
+    document.querySelectorAll("[data-workspace-mode]").forEach(button => {
+        button.classList.toggle("active", button.dataset.workspaceMode === workspaceMode);
+    });
 
-    if (elements.editor.value !== chapter.draftContent) elements.editor.value = chapter.draftContent ?? "";
-    updateEditorMeta();
-    switchViewMode(viewMode, false);
+    if (workspaceMode === "chapters") {
+        renderChapterList();
+        const chapter = currentChapter();
+        elements.noChapterView.classList.toggle("hidden", Boolean(chapter));
+        elements.chapterEditorView.classList.toggle("hidden", !chapter);
+        elements.worldbuildingEditorView.classList.add("hidden");
+        if (!chapter) return;
+
+        if (elements.editor.value !== chapter.draftContent) elements.editor.value = chapter.draftContent ?? "";
+        updateEditorMeta();
+        switchViewMode(viewMode, false);
+        return;
+    }
+
+    renderWorldbuildingList();
+    const item = currentWorldbuildingItem();
+    elements.noChapterView.classList.toggle("hidden", Boolean(item));
+    elements.chapterEditorView.classList.add("hidden");
+    elements.worldbuildingEditorView.classList.toggle("hidden", !item);
+    if (item) renderWorldbuildingEditor(item);
 }
 
 function renderAll() {
@@ -210,15 +318,35 @@ function renderAll() {
 async function selectProject(id) {
     await persistNow();
     currentProject = projects.find(project => project.id === id) ?? null;
+    workspaceMode = "chapters";
     selectedChapterId = currentProject?.chapters?.slice().sort((a, b) => a.orderIndex - b.orderIndex)[0]?.id ?? null;
+    selectedWorldbuildingId = null;
     viewMode = "edit";
     elements.sidebar.classList.remove("open");
     renderAll();
 }
 
 function selectChapter(id) {
+    workspaceMode = "chapters";
     selectedChapterId = id;
+    selectedWorldbuildingId = null;
     viewMode = "edit";
+    renderWorkspace();
+}
+
+function switchWorkspaceMode(mode) {
+    if (!currentProject || !["chapters", "characters", "locations"].includes(mode)) return;
+    workspaceMode = mode;
+    viewMode = "edit";
+    if (mode === "chapters") {
+        selectedChapterId ??= currentProject.chapters?.slice().sort((a, b) => a.orderIndex - b.orderIndex)[0]?.id ?? null;
+        selectedWorldbuildingId = null;
+    } else {
+        const items = currentProject[mode] ?? [];
+        selectedWorldbuildingId = items.some(item => item.id === selectedWorldbuildingId)
+            ? selectedWorldbuildingId
+            : items[0]?.id ?? null;
+    }
     renderWorkspace();
 }
 
@@ -230,6 +358,47 @@ function updateEditorMeta() {
     const dirty = hasUnsavedChanges(chapter);
     elements.draftStatus.textContent = dirty ? "Alterações não salvas" : "Versão salva";
     elements.draftStatus.style.color = dirty ? "var(--primary)" : "var(--muted)";
+}
+
+function renderWorldbuildingEditor(item) {
+    const isCharacter = workspaceMode === "characters";
+    elements.worldbuildingKindLabel.textContent = isCharacter ? "Personagem" : "Local";
+    elements.worldbuildingTitle.textContent = item.name || (isCharacter ? "Novo personagem" : "Novo local");
+    elements.characterSurnamesField.classList.toggle("hidden", !isCharacter);
+    elements.locationDescriptionField.classList.toggle("hidden", isCharacter);
+
+    if (elements.worldbuildingName.value !== (item.name ?? "")) elements.worldbuildingName.value = item.name ?? "";
+    if (elements.worldbuildingSurnames.value !== (item.surnames ?? "")) elements.worldbuildingSurnames.value = item.surnames ?? "";
+    if (elements.worldbuildingDescription.value !== (item.description ?? "")) elements.worldbuildingDescription.value = item.description ?? "";
+    if (elements.worldbuildingChapters.value !== (item.chapters ?? "")) elements.worldbuildingChapters.value = item.chapters ?? "";
+    if (elements.worldbuildingImageUri.value !== (item.imageUri ?? "")) elements.worldbuildingImageUri.value = item.imageUri ?? "";
+    elements.worldbuildingSaveState.textContent = "Salvo automaticamente neste navegador.";
+}
+
+function updateWorldbuildingItemFromForm() {
+    const item = currentWorldbuildingItem();
+    if (!item) return;
+
+    item.name = elements.worldbuildingName.value;
+    item.chapters = elements.worldbuildingChapters.value;
+    const nextImageUri = elements.worldbuildingImageUri.value.trim() || null;
+    if ((item.imageUri ?? null) !== nextImageUri) item.mediaId = null;
+    item.imageUri = nextImageUri;
+
+    if (workspaceMode === "characters") {
+        item.surnames = elements.worldbuildingSurnames.value;
+    } else {
+        item.description = elements.worldbuildingDescription.value;
+    }
+
+    elements.worldbuildingTitle.textContent = item.name.trim() || workspaceConfig().singularTitle;
+    elements.worldbuildingSaveState.textContent = "Salvando…";
+    renderWorldbuildingList();
+    schedulePersist();
+    clearTimeout(updateWorldbuildingItemFromForm.saveStateTimer);
+    updateWorldbuildingItemFromForm.saveStateTimer = setTimeout(() => {
+        elements.worldbuildingSaveState.textContent = "Salvo automaticamente neste navegador.";
+    }, 700);
 }
 
 function renderPreview() {
@@ -310,7 +479,9 @@ async function createBook() {
     await saveProject(project);
     projects.unshift(project);
     currentProject = project;
+    workspaceMode = "chapters";
     selectedChapterId = null;
+    selectedWorldbuildingId = null;
     renderAll();
     await createChapter();
 }
@@ -336,6 +507,66 @@ async function createChapter() {
     await persistNow();
     renderAll();
     elements.editor.focus();
+}
+
+async function createWorkspaceItem() {
+    if (workspaceMode === "chapters") {
+        await createChapter();
+        return;
+    }
+    await createWorldbuildingItem();
+}
+
+async function createWorldbuildingItem() {
+    if (!currentProject || workspaceMode === "chapters") return;
+    const config = workspaceConfig();
+    const name = await promptText({
+        title: `Novo ${config.singular}`,
+        label: "Nome",
+        hint: `O ${config.singular} ficará salvo neste livro e será incluído no backup.`
+    });
+    if (!name?.trim()) return;
+
+    const item = workspaceMode === "characters"
+        ? {
+            id: crypto.randomUUID(),
+            name: name.trim(),
+            surnames: "",
+            chapters: "",
+            imageUri: null,
+            mediaId: null
+        }
+        : {
+            id: crypto.randomUUID(),
+            name: name.trim(),
+            description: "",
+            chapters: "",
+            imageUri: null,
+            mediaId: null
+        };
+
+    currentProject[workspaceMode] ??= [];
+    currentProject[workspaceMode].push(item);
+    selectedWorldbuildingId = item.id;
+    await persistNow();
+    renderWorkspace();
+    elements.worldbuildingName.focus();
+}
+
+async function deleteCurrentWorldbuildingItem() {
+    const item = currentWorldbuildingItem();
+    if (!item || workspaceMode === "chapters") return;
+    const config = workspaceConfig();
+    if (!await confirmAction(
+        `Excluir ${config.singular}`,
+        `Excluir “${item.name || config.singularTitle}” deste livro?`
+    )) return;
+
+    currentProject[workspaceMode] = (currentProject[workspaceMode] ?? []).filter(candidate => candidate.id !== item.id);
+    selectedWorldbuildingId = currentProject[workspaceMode][0]?.id ?? null;
+    await persistNow();
+    renderWorkspace();
+    showToast(`${config.singularTitle} excluído.`);
 }
 
 async function renameCurrentChapter() {
@@ -443,7 +674,9 @@ async function importSelectedBook(file) {
         await saveProject(project);
         projects.unshift(project);
         currentProject = project;
+        workspaceMode = "chapters";
         selectedChapterId = project.chapters?.slice().sort((a, b) => a.orderIndex - b.orderIndex)[0]?.id ?? null;
+        selectedWorldbuildingId = null;
         renderAll();
         showToast(`“${project.title}” importado com sucesso.`);
     } catch (error) {
@@ -475,9 +708,17 @@ function bindEvents() {
     $("#importBookButton").addEventListener("click", openImportPicker);
     $("#welcomeImportBookButton").addEventListener("click", openImportPicker);
     elements.importInput.addEventListener("change", event => event.target.files?.[0] && importSelectedBook(event.target.files[0]));
-    $("#newChapterButton").addEventListener("click", createChapter);
-    $("#emptyNewChapterButton").addEventListener("click", createChapter);
+    elements.newWorkspaceItemButton.addEventListener("click", createWorkspaceItem);
+    elements.emptyNewWorkspaceItemButton.addEventListener("click", createWorkspaceItem);
     elements.saveVersionButton.addEventListener("click", () => saveCurrentVersion());
+
+    document.querySelectorAll("[data-workspace-mode]").forEach(button => {
+        button.addEventListener("click", () => switchWorkspaceMode(button.dataset.workspaceMode));
+    });
+
+    elements.worldbuildingForm.addEventListener("input", updateWorldbuildingItemFromForm);
+    elements.worldbuildingForm.addEventListener("submit", event => event.preventDefault());
+    elements.deleteWorldbuildingButton.addEventListener("click", deleteCurrentWorldbuildingItem);
 
     elements.editor.addEventListener("input", event => {
         const chapter = currentChapter();

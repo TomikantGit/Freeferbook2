@@ -157,6 +157,28 @@ button { cursor: pointer; }
 .chapter-panel { border-right: 1px solid var(--border); background: var(--surface); padding: 14px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
 .book-title-workspace { font-weight: 800; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chapter-list { flex: 1; }
+.workspace-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-2);
+}
+.workspace-tab {
+    border: 0;
+    min-width: 0;
+    padding: 7px 5px;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font-size: .72rem;
+    font-weight: 750;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.workspace-tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
 .editor-panel { min-width: 0; height: 100%; overflow: hidden; }
 .empty-editor { height: 100%; display: grid; place-content: center; text-align: center; gap: 6px; padding: 30px; }
 .empty-editor p { color: var(--muted); margin-top: 0; }
@@ -196,6 +218,45 @@ button { cursor: pointer; }
 .history-title { font-weight: 750; }
 .history-snippet { color: var(--muted); font-size: .86rem; white-space: pre-wrap; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
 
+.worldbuilding-editor { height: 100%; overflow: auto; padding: clamp(22px, 5vw, 56px); }
+.worldbuilding-header {
+    width: min(760px, 100%);
+    margin: 0 auto 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+}
+.worldbuilding-header h2 { margin: 5px 0 0; font-size: clamp(1.45rem, 3vw, 2rem); }
+.worldbuilding-form {
+    width: min(760px, 100%);
+    margin: 0 auto;
+    display: grid;
+    gap: 18px;
+    padding: 22px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+.worldbuilding-form label { display: grid; gap: 7px; font-weight: 700; font-size: .88rem; }
+.worldbuilding-form input,
+.worldbuilding-form textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    font-weight: 400;
+}
+.worldbuilding-form textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
+.worldbuilding-form input:focus,
+.worldbuilding-form textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+.worldbuilding-form small { font-weight: 400; line-height: 1.4; }
+.worldbuilding-save-state { padding-top: 4px; border-top: 1px solid var(--border); }
+
 .menu { position: absolute; right: 0; top: 42px; min-width: 190px; padding: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); z-index: 30; }
 .menu button { width: 100%; text-align: left; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--text); }
 .menu button:hover { background: var(--surface-2); }
@@ -232,4 +293,7 @@ button { cursor: pointer; }
     .welcome-view { padding: 16px; }
     .welcome-card { padding: 22px; }
     .editor-meta span:last-child { display: none; }
+    .workspace-tab { font-size: .66rem; padding-inline: 3px; }
+    .worldbuilding-editor { padding: 18px 14px 50px; }
+    .worldbuilding-form { padding: 16px; }
 }

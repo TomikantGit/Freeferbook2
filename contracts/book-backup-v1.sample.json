@@ -1,0 +1,46 @@
+{
+  "format": "freeferbook-book-backup",
+  "schemaVersion": 1,
+  "exportedAt": 1788969600000,
+  "book": {
+    "title": "Livro de compatibilidade",
+    "createdAt": 1788969500000
+  },
+  "chapters": [
+    {
+      "title": "Capítulo 1",
+      "orderIndex": 0,
+      "createdAt": 1788969500000,
+      "versions": [
+        {
+          "content": "# Abertura\n\nTexto **compatível** entre plataformas.",
+          "createdAt": 1788969550000,
+          "message": "Fixture v1",
+          "sequenceNumber": 1,
+          "wordCount": 6,
+          "charCount": 52,
+          "lineCount": 3
+        }
+      ]
+    }
+  ],
+  "characters": [
+    {
+      "name": "Ana",
+      "surnames": "Silva",
+      "chapters": "1",
+      "imageUri": null,
+      "imageEntry": null
+    }
+  ],
+  "locations": [
+    {
+      "name": "Biblioteca",
+      "description": "Cenário principal",
+      "chapters": "1",
+      "imageUri": null,
+      "imageEntry": null
+    }
+  ],
+  "images": []
+}
