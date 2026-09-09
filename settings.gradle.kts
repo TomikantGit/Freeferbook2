@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "LivroHub"
-include(":app", ":core")
+include(":app", ":core", ":desktopApp")

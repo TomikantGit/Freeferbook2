@@ -179,11 +179,63 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "Freeferbook — teste mais recente" \
-            --notes "APK ${{ steps.version.outputs.name }} gerado automaticamente pelo GitHub Actions a partir do commit $GITHUB_SHA." \
+            --notes "Release ${{ steps.version.outputs.name }} gerada automaticamente a partir do commit $GITHUB_SHA. O MSI Windows é anexado pelo job Desktop antes da publicação final da Web." \
             --prerelease
 
-  deploy-web-and-update-channel:
+  build-desktop-windows:
     needs: build-and-publish
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configurar Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Testar e empacotar Desktop Windows
+        shell: pwsh
+        run: |
+          .\gradlew.bat :desktopApp:test :desktopApp:packageMsi --stacktrace `
+            "-PdesktopPackageVersion=0.1.$env:GITHUB_RUN_NUMBER"
+
+      - name: Normalizar nome do MSI
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem -Path desktopApp\build -Filter *.msi -Recurse | Select-Object -First 1
+          if (-not $msi) {
+            throw "MSI do Freeferbook Desktop não encontrado."
+          }
+          Copy-Item -LiteralPath $msi.FullName -Destination freeferbook-desktop-windows.msi -Force
+
+      - name: Guardar MSI do workflow
+        uses: actions/upload-artifact@v6
+        with:
+          name: freeferbook-desktop-windows
+          path: freeferbook-desktop-windows.msi
+          retention-days: 14
+
+      - name: Anexar Desktop à release fixa
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload test-latest freeferbook-desktop-windows.msi `
+            --repo $env:GITHUB_REPOSITORY `
+            --clobber
+
+  deploy-web-and-update-channel:
+    needs:
+      - build-and-publish
+      - build-desktop-windows
     runs-on: ubuntu-latest
     environment:
       name: github-pages

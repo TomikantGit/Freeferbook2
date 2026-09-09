@@ -35,7 +35,9 @@
             <div id="connectionStatus" class="connection-status muted small">Verificando conexão…</div>
             <div id="webBuildInfo" class="muted small">Carregando versão Web…</div>
             <div id="androidBuildInfo" class="muted small">Carregando versão Android…</div>
+            <div id="desktopBuildInfo" class="muted small">Carregando versão Desktop…</div>
             <a class="text-link" href="freeferbook-test.apk">Baixar APK Android</a>
+            <a class="text-link" href="https://github.com/TomikantGit/Freeferbook2/releases/download/test-latest/freeferbook-desktop-windows.msi">Baixar Desktop Windows</a>
         </div>
     </aside>
 
@@ -55,7 +57,7 @@
                 <h1>Escreva e confira mudanças sem instalar um APK.</h1>
                 <p>
                     A versão Web usa armazenamento local do navegador e compartilha o mesmo formato de
-                    backup do Android. Um único push publica o site e a nova build Android.
+                    backup do Android. Um único push publica Web, Android e Desktop.
                 </p>
                 <div class="welcome-actions">
                     <button class="primary-button" id="welcomeNewBookButton">Criar primeiro livro</button>
@@ -71,6 +73,11 @@
                         <div class="section-label">Android</div>
                         <div id="welcomeAndroidVersion" class="release-value">—</div>
                         <div id="welcomeAndroidCommit" class="muted small">—</div>
+                    </div>
+                    <div class="release-card">
+                        <div class="section-label">Desktop Windows</div>
+                        <div id="welcomeDesktopVersion" class="release-value">—</div>
+                        <div id="welcomeDesktopCommit" class="muted small">—</div>
                     </div>
                 </div>
             </div>
@@ -318,7 +325,7 @@
 
         <details class="settings-node">
             <summary>
-                <span><strong>Extras</strong><small>Acessibilidade, versões e canal Android.</small></span>
+                <span><strong>Extras</strong><small>Acessibilidade, versões e canais Android/Desktop.</small></span>
                 <span class="settings-chevron">⌄</span>
             </summary>
             <div class="settings-node-content">
@@ -329,9 +336,11 @@
                 <div class="settings-release-info">
                     <div><span class="muted small">Web</span><strong id="settingsWebVersion">—</strong></div>
                     <div><span class="muted small">Android</span><strong id="settingsAndroidVersion">—</strong></div>
+                    <div><span class="muted small">Desktop</span><strong id="settingsDesktopVersion">—</strong></div>
                 </div>
                 <button type="button" class="secondary-button settings-download-link hidden" id="installWebAppButton">Instalar Freeferbook Web</button>
                 <a class="secondary-button settings-download-link" href="freeferbook-test.apk">Baixar APK Android</a>
+                <a class="secondary-button settings-download-link" href="https://github.com/TomikantGit/Freeferbook2/releases/download/test-latest/freeferbook-desktop-windows.msi">Baixar Desktop Windows</a>
             </div>
         </details>
     </form>

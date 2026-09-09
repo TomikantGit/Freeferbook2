@@ -10,6 +10,7 @@ coroutines = "1.8.1"
 diffUtils = "4.12"
 datastorePreferences = "1.1.1"
 coil = "2.6.0"
+composeMultiplatform = "1.6.11"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
@@ -34,4 +35,5 @@ coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

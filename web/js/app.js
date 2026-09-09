@@ -80,6 +80,7 @@ const elements = {
     reducedMotion: $("#reducedMotion"),
     settingsWebVersion: $("#settingsWebVersion"),
     settingsAndroidVersion: $("#settingsAndroidVersion"),
+    settingsDesktopVersion: $("#settingsDesktopVersion"),
     connectionStatus: $("#connectionStatus"),
     installWebAppButton: $("#installWebAppButton"),
     diffDialog: $("#diffDialog"),
@@ -1316,15 +1317,21 @@ async function loadReleaseInfo() {
     const webCommit = web?.shortSha ? `commit ${web.shortSha}` : "sem metadados de deploy";
     const androidVersion = android?.versionName ?? "indisponível";
     const androidCommit = android?.notes ?? "sem metadados";
+    const desktopVersion = web?.version ?? "indisponível";
+    const desktopCommit = web?.shortSha ? `commit ${web.shortSha}` : "sem metadados de deploy";
 
     $("#webBuildInfo").textContent = `Web: ${webVersion}${web?.shortSha ? ` • ${web.shortSha}` : ""}`;
     $("#androidBuildInfo").textContent = `Android: ${androidVersion}`;
+    $("#desktopBuildInfo").textContent = `Desktop: ${desktopVersion}`;
     $("#welcomeWebVersion").textContent = webVersion;
     $("#welcomeWebCommit").textContent = webCommit;
     $("#welcomeAndroidVersion").textContent = androidVersion;
     $("#welcomeAndroidCommit").textContent = androidCommit;
+    $("#welcomeDesktopVersion").textContent = desktopVersion;
+    $("#welcomeDesktopCommit").textContent = desktopCommit;
     elements.settingsWebVersion.textContent = web?.shortSha ? `${webVersion} • ${web.shortSha}` : webVersion;
     elements.settingsAndroidVersion.textContent = androidVersion;
+    elements.settingsDesktopVersion.textContent = desktopVersion;
 }
 
 function updateConnectionStatus() {

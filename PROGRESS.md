@@ -386,6 +386,20 @@
 - O deploy PWA do commit `b6fb0b4` terminou com sucesso; em Chrome real, `sw.js` assumiu controle, criou o cache de shell do commit e a pagina continuou funcional apos reload com rede emulada como offline pelo DevTools Protocol.
 - A futura versao Desktop deve consumir `:core` diretamente; a UI Desktop ainda nao foi iniciada nesta etapa.
 
+## Modulo 32 — Freeferbook Desktop inicial e release tripla (2026-09-09)
+
+- Criado `desktopApp` com Compose Desktop 1.6.11 e dependencia direta de `:core`.
+- Implementada biblioteca Desktop com criacao de livros e capitulos, editor de rascunho, salvamento de versoes, historico e restauracao.
+- Revisao/correcao segura no Desktop reutiliza o mesmo `TextRevisionEngine` do Android atraves de `:core`.
+- Criado `DesktopStore` com formato local binario versionado, strings UTF-8 com tamanho explicito e escrita atomica em `~/.freeferbook/desktop-library-v1.bin`.
+- Adicionado `DesktopStoreTest`, validando round-trip de livro, capitulo, rascunho, versao e mensagem.
+- `:desktopApp:test` e `:desktopApp:compileKotlin` passaram localmente; `:app:testDebugUnitTest` continuou verde apos a inclusao do modulo Desktop.
+- O empacotamento MSI local nao pode ser validado porque o JBR do Android Studio desta maquina nao possui `jpackage.exe`; o workflow usa Temurin 17 completo no runner Windows para essa etapa.
+- O GitHub Actions ganhou job `build-desktop-windows`, que testa o Desktop, executa `packageMsi`, normaliza o artefato para `freeferbook-desktop-windows.msi` e o anexa a `test-latest`.
+- O deploy do Pages passou a depender de Android + Desktop; portanto a Web so e publicada quando os dois binarios do mesmo push estiverem prontos.
+- A Web passou a exibir a versao Desktop junto de Web/Android e oferece download fixo do MSI pela release `test-latest`.
+- O armazenamento local Desktop ainda nao e o backup portatil `.freeferbook`; interoperabilidade de importacao/exportacao com Android/Web fica como proximo bloco.
+
 ## Observacoes
 
 - O ambiente local atual possui Java/Android SDK suficientes para `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` em modo offline.

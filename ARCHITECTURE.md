@@ -59,6 +59,23 @@ Os packages `com.livrohub.domain.*` foram preservados para que o Android passe a
 
 O objetivo imediato é permitir que a futura aplicação Desktop reutilize essas regras diretamente na JVM. Isso é uma extração incremental; não é ainda uma migração total para Kotlin Multiplatform.
 
+## Freeferbook Desktop
+
+`desktopApp/` é a primeira aplicação Compose Desktop do projeto. Ela depende de `:core` e não importa código de UI/Room do Android.
+
+Estado atual do Desktop:
+
+- biblioteca local de livros;
+- capítulos e rascunhos;
+- histórico imutável de versões;
+- restauração criando nova versão;
+- revisão textual usando `TextRevisionEngine` do `:core`;
+- persistência local binária versionada em `~/.freeferbook/desktop-library-v1.bin`.
+
+O armazenamento Desktop é interno e atômico (arquivo temporário + replace). Ele não substitui o contrato portátil `freeferbook-book-backup`; importação/exportação desse ZIP ainda deve ser adicionada ao Desktop antes de considerar interoperabilidade completa entre as três interfaces.
+
+O workflow público gera o MSI em `windows-latest`, anexa `freeferbook-desktop-windows.msi` à release fixa `test-latest` e só então libera o deploy final do GitHub Pages. Assim, um push de `main` representa o mesmo ciclo de release para Web, Android e Desktop.
+
 ### Domain Android
 
 O módulo `app` mantém contratos e regras que dependem da arquitetura atual do Android, como:
@@ -364,6 +381,15 @@ core/
    │  └─ revision/
    └─ test/kotlin/com/livrohub/domain/
 
+desktopApp/
+├─ build.gradle.kts
+└─ src/
+   ├─ main/kotlin/com/livrohub/desktop/
+   │  ├─ DesktopAppState.kt
+   │  ├─ DesktopStore.kt
+   │  └─ Main.kt
+   └─ test/kotlin/com/livrohub/desktop/
+
 	web/
 	├─ index.html
 	├─ sw.js
@@ -410,3 +436,4 @@ contracts/
 	17. Comparação de versões Web deve usar `diff.js` como regra pura; a UI apenas seleciona versões e renderiza linhas/spans.
 	18. O Service Worker Web deve manter metadados de release em estratégia network-first e nunca cachear o APK de atualização.
 19. Novas regras puras de manuscrito devem preferencialmente entrar em `:core`; regras específicas de UI/Room/Android continuam no `app`.
+20. O Desktop deve consumir `:core` e o contrato de backup portátil; não criar implementações divergentes de revisão/diff/modelos dentro de `desktopApp`.
