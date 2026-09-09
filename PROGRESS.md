@@ -374,6 +374,18 @@
 - A area Extras mostra `Instalar Freeferbook Web` somente quando o navegador dispara `beforeinstallprompt`; como o projeto ainda nao possui icone PWA proprio, nenhum asset visual foi inventado nesta etapa.
 - Criado `scripts/test-web-pwa.mjs`, que valida manifesto, registro do Service Worker, shell cacheavel e tratamento especial do canal de atualizacao.
 
+## Modulo 31 — Nucleo JVM compartilhado para Android/Desktop (2026-09-09)
+
+- Criado o modulo `:core` com plugin Kotlin/JVM e bytecode alvo Java 17, sem dependencia de Android, Compose, Room ou DataStore.
+- Movidos para `:core` os modelos `Book`, `BookWithStats`, `Chapter`, `ChapterVersion`, `Character`, `Location` e `ImageReference`.
+- `TextRevisionEngine` e `TextDiffEngine` tambem passaram para o nucleo compartilhado, mantendo os packages `com.livrohub.domain.*` para evitar reescrita dos consumidores Android.
+- Os testes unitarios de revisao e diff foram movidos junto com as regras para `core/src/test`.
+- O modulo Android passou a usar `implementation(project(":core"))`; `java-diff-utils` deixou de ser dependencia direta do `app` e ficou restrito ao modulo que realmente a utiliza.
+- Validacoes locais: `:core:test`, `:app:testDebugUnitTest` e `:app:assembleDebug` concluiram com `BUILD SUCCESSFUL` apos a separacao.
+- O GitHub Actions passou a executar `./gradlew :core:test` antes da build publica Android.
+- O deploy PWA do commit `b6fb0b4` terminou com sucesso; em Chrome real, `sw.js` assumiu controle, criou o cache de shell do commit e a pagina continuou funcional apos reload com rede emulada como offline pelo DevTools Protocol.
+- A futura versao Desktop deve consumir `:core` diretamente; a UI Desktop ainda nao foi iniciada nesta etapa.
+
 ## Observacoes
 
 - O ambiente local atual possui Java/Android SDK suficientes para `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` em modo offline.

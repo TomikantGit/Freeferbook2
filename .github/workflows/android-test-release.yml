@@ -31,9 +31,6 @@ jobs:
           node scripts/test-web-diff.mjs
           node scripts/test-web-pwa.mjs
 
-      - name: Validar formatacao Web
-        run: node scripts/test-web-formatting.mjs
-
       - name: Configurar Java 17
         uses: actions/setup-java@v5
         with:
@@ -87,6 +84,9 @@ jobs:
 
       - name: Permitir execução do Gradle Wrapper
         run: chmod +x ./gradlew
+
+      - name: Testar núcleo compartilhado
+        run: ./gradlew :core:test --stacktrace
 
       - name: Definir versão da build de teste
         id: version

@@ -82,6 +82,7 @@ ksp {
 }
 
 dependencies {
+    implementation(project(":core"))
     implementation("androidx.core:core-ktx:1.13.0")
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
@@ -94,7 +95,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.runtime)
-    implementation(libs.java.diff.utils)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.coil.compose)

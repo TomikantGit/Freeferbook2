@@ -2,9 +2,9 @@
 
 ## Visão geral
 
-Aplicativo Android nativo, offline-first, para escrita e organização de manuscritos. O código usa Kotlin, Jetpack Compose, Room, DataStore, Coroutines/StateFlow e uma camada de domínio explícita.
+Freeferbook é um sistema offline-first para escrita e organização de manuscritos. O cliente Android usa Kotlin, Jetpack Compose, Room, DataStore e Coroutines/StateFlow; a Web usa módulos JavaScript e IndexedDB.
 
-O repositório também contém o cliente `web/`, uma aplicação Web offline-first que usa IndexedDB e o mesmo contrato de backup do Android. A Web é publicada pelo mesmo workflow de release, mas ainda não compartilha binários Kotlin com o Android; a extração para Kotlin Multiplatform deve ocorrer de forma incremental depois que os contratos entre plataformas estiverem estabilizados.
+O repositório possui agora um módulo JVM puro `:core`. Ele concentra modelos e regras que não dependem de Android e será a base compartilhada entre Android e a futura versão Desktop. A Web continua independente em JavaScript, mas mantém contratos e testes equivalentes para backup, revisão e diff.
 
 Princípios atuais:
 
@@ -14,14 +14,16 @@ Princípios atuais:
 - navegação tipada por estado;
 - regras editoriais/worldbuilding fora dos Composables;
 - recursos online opcionais e isolados do fluxo de escrita offline.
+- domínio reutilizável fora do módulo Android sempre que não houver dependência de framework/plataforma.
 
 ## Camadas
 
 ```mermaid
 graph TB
-    UI["UI / Compose"] --> VM["ViewModels"]
+    UI["Android UI / Compose"] --> VM["ViewModels"]
     UI --> NAV["AppNavigationState"]
-    VM --> DOMAIN["Serviços de domínio"]
+    VM --> CORE[":core / domínio JVM"]
+    VM --> DOMAIN["Serviços de domínio Android"]
     VM --> REPO["Repository interfaces"]
     DOMAIN --> REPO
     REPO -. implementação .-> DATA["Repositories data"]
@@ -33,6 +35,7 @@ graph TB
     DATA --> ARCHIVE
     VM --> ARCHIVE["BookArchiveManager"]
     ARCHIVE --> ROOM
+    DESKTOP["Desktop futuro"] -. usa .-> CORE
 ```
 
 ### UI
@@ -43,12 +46,24 @@ Responsável por composição, interação e coleta de estado. Screens não deve
 
 Expõem `StateFlow` e coordenam ações da tela. A política padrão de compartilhamento está centralizada em `WhileUiSubscribed` (`5s`).
 
-### Domain
+### Core compartilhado
 
-Contém modelos, contratos de repositório e regras reutilizáveis, como:
+`core/` é Kotlin/JVM puro e não referencia Android, Compose, Room ou DataStore. Atualmente contém:
 
-- `TextDiffEngine`;
+- `Book`, `BookWithStats`, `Chapter`, `ChapterVersion`;
+- `Character`, `Location`, `ImageReference`;
 - `TextRevisionEngine`;
+- `TextDiffEngine` e seus modelos de diff.
+
+Os packages `com.livrohub.domain.*` foram preservados para que o Android passe a consumir `:core` sem reescrever imports. Os testes de revisão e diff também pertencem a `:core`.
+
+O objetivo imediato é permitir que a futura aplicação Desktop reutilize essas regras diretamente na JVM. Isso é uma extração incremental; não é ainda uma migração total para Kotlin Multiplatform.
+
+### Domain Android
+
+O módulo `app` mantém contratos e regras que dependem da arquitetura atual do Android, como:
+
+- interfaces de repositories;
 - `ChapterMentionSynchronizer`.
 
 ### Data
@@ -298,7 +313,7 @@ Para `stateIn`, usar `WhileUiSubscribed`, definido em `ui/common/ViewModelSuppor
 
 ## Testes
 
-`testDebugUnitTest` é a validação unitária padrão e deve permanecer executável.
+`:core:test` valida o domínio JVM compartilhado. `testDebugUnitTest` continua sendo a validação unitária padrão do módulo Android; ambos devem permanecer executáveis.
 
 Cobertura atual inclui:
 
@@ -340,6 +355,15 @@ com.livrohub/
    │  └─ update/
    └─ ...
 
+core/
+├─ build.gradle.kts
+└─ src/
+   ├─ main/kotlin/com/livrohub/domain/
+   │  ├─ diff/
+   │  ├─ model/
+   │  └─ revision/
+   └─ test/kotlin/com/livrohub/domain/
+
 	web/
 	├─ index.html
 	├─ sw.js
@@ -377,7 +401,7 @@ contracts/
 8. Feature online: manter opt-in e desacoplada das funções de escrita/biblioteca offline.
 9. Toda refatoração relevante deve fechar com `testDebugUnitTest` + `assembleDebug`.
 10. Alterações no formato de backup devem ser implementadas/testadas em Android e Web antes de incrementar `schemaVersion`.
-11. A futura versão Desktop deve entrar somente depois de estabilizar os contratos Web/Android; priorizar extração gradual de regras puras para Kotlin Multiplatform, não uma migração total de uma vez.
+11. A futura versão Desktop deve consumir `:core`; código puro não deve ser copiado de volta para `desktopApp` ou `app`.
 12. Mudança no formato de backup: manter compatibilidade retroativa quando possível e atualizar a fixture/validador junto da implementação.
 	13. Configurações específicas da Web não devem alterar silenciosamente o contrato de backup; preferências de navegador permanecem locais salvo quando houver um contrato multiplataforma explícito.
 	14. Regra de formatação Web deve permanecer em módulo puro/testável; eventos de DOM, foco e seleção ficam em `app.js`.
@@ -385,3 +409,4 @@ contracts/
 	16. Mídia Web incorporada deve ser referenciada por `mediaId`; ao remover a última referência, eliminar o Blob órfão para evitar crescimento silencioso do backup.
 	17. Comparação de versões Web deve usar `diff.js` como regra pura; a UI apenas seleciona versões e renderiza linhas/spans.
 	18. O Service Worker Web deve manter metadados de release em estratégia network-first e nunca cachear o APK de atualização.
+19. Novas regras puras de manuscrito devem preferencialmente entrar em `:core`; regras específicas de UI/Room/Android continuam no `app`.
