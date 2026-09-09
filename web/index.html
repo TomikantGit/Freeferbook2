@@ -89,6 +89,7 @@
                     <button class="workspace-tab active" data-workspace-mode="chapters">Capítulos</button>
                     <button class="workspace-tab" data-workspace-mode="characters">Personagens</button>
                     <button class="workspace-tab" data-workspace-mode="locations">Locais</button>
+                    <button class="workspace-tab" data-workspace-mode="images">Imagens</button>
                 </div>
                 <div id="chapterList" class="chapter-list"></div>
             </aside>
@@ -214,6 +215,18 @@
 
                         <div class="worldbuilding-save-state muted small" id="worldbuildingSaveState">Salvo automaticamente neste navegador.</div>
                     </form>
+                </div>
+
+                <div id="imageGalleryView" class="image-gallery-view hidden">
+                    <div class="image-gallery-header">
+                        <div>
+                            <div class="section-label">Imagens de referência</div>
+                            <h2>Galeria do livro</h2>
+                        </div>
+                        <button class="secondary-button compact" id="addLocalImageButton">Adicionar arquivo</button>
+                        <input id="localImageInput" type="file" accept="image/*" hidden>
+                    </div>
+                    <div id="imageGrid" class="image-grid"></div>
                 </div>
             </div>
         </section>

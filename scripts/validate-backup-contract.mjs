@@ -53,6 +53,21 @@ const project = {
     media: []
 };
 
+const embeddedMediaId = crypto.randomUUID();
+const embeddedBytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+project.media.push({
+    id: embeddedMediaId,
+    entryName: "media/contract-sample.png",
+    blob: new Blob([embeddedBytes], { type: "image/png" })
+});
+project.images.push({
+    id: crypto.randomUUID(),
+    url: "contract-sample.png",
+    description: "Imagem incorporada do contrato",
+    createdAt: fixture.exportedAt,
+    mediaId: embeddedMediaId
+});
+
 const { blob, fileName } = await exportFreeferbookArchive(project);
 const file = new File([blob], fileName, { type: "application/zip" });
 const imported = await importFreeferbookArchive(file);
@@ -62,5 +77,9 @@ assert.equal(imported.chapters.length, fixture.chapters.length);
 assert.equal(imported.chapters[0].versions[0].content, fixture.chapters[0].versions[0].content);
 assert.equal(imported.characters[0].name, fixture.characters[0].name);
 assert.equal(imported.locations[0].name, fixture.locations[0].name);
+const embeddedImage = imported.images.find(image => image.description === "Imagem incorporada do contrato");
+assert.ok(embeddedImage?.mediaId, "Imagem incorporada perdeu a associação com mediaId");
+const embeddedMedia = imported.media.find(media => media.id === embeddedImage.mediaId);
+assert.equal(embeddedMedia?.blob?.size, embeddedBytes.length, "Blob incorporado mudou de tamanho no round-trip");
 
-console.log(`backup_contract=ok format=${fixture.format} schema=${fixture.schemaVersion} roundtrip=${fileName}`);
+console.log(`backup_contract=ok format=${fixture.format} schema=${fixture.schemaVersion} roundtrip=${fileName} media=${embeddedBytes.length}B`);

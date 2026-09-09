@@ -53,6 +53,10 @@ const elements = {
     locationDescriptionField: $("#locationDescriptionField"),
     deleteWorldbuildingButton: $("#deleteWorldbuildingButton"),
     worldbuildingSaveState: $("#worldbuildingSaveState"),
+    imageGalleryView: $("#imageGalleryView"),
+    imageGrid: $("#imageGrid"),
+    addLocalImageButton: $("#addLocalImageButton"),
+    localImageInput: $("#localImageInput"),
     importInput: $("#importBookInput"),
     toast: $("#toast"),
     textDialog: $("#textDialog"),
@@ -98,6 +102,9 @@ let persistTimer = null;
 let toastTimer = null;
 let webSettings = loadWebSettings();
 let editorSelection = { start: 0, end: 0 };
+let imageObjectUrls = [];
+
+const MAX_LOCAL_IMAGE_BYTES = 100 * 1024 * 1024;
 
 function loadWebSettings() {
     try {
@@ -213,7 +220,7 @@ function currentChapter() {
 }
 
 function currentWorldbuildingItem() {
-    if (!currentProject || workspaceMode === "chapters") return null;
+    if (!currentProject || !["characters", "locations"].includes(workspaceMode)) return null;
     return (currentProject[workspaceMode] ?? []).find(item => item.id === selectedWorldbuildingId) ?? null;
 }
 
@@ -234,6 +241,15 @@ function workspaceConfig() {
             plural: "Locais",
             emptyTitle: "Nenhum local selecionado",
             emptyText: "Crie ou escolha um local na lista ao lado."
+        };
+    }
+    if (workspaceMode === "images") {
+        return {
+            singular: "imagem",
+            singularTitle: "Imagem",
+            plural: "Imagens",
+            emptyTitle: "Nenhuma imagem de referência",
+            emptyText: "Adicione uma URL ou um arquivo local à galeria deste livro."
         };
     }
     return {
@@ -421,22 +437,25 @@ function renderWorkspace() {
 
     elements.bookTitleInWorkspace.textContent = currentProject.title;
     const config = workspaceConfig();
+    const newItemLabel = workspaceMode === "images" ? "Nova imagem" : `Novo ${config.singular}`;
     elements.workspaceCollectionLabel.textContent = config.plural;
-    elements.newWorkspaceItemButton.title = `Novo ${config.singular}`;
-    elements.newWorkspaceItemButton.setAttribute("aria-label", `Novo ${config.singular}`);
+    elements.newWorkspaceItemButton.title = newItemLabel;
+    elements.newWorkspaceItemButton.setAttribute("aria-label", newItemLabel);
     elements.emptyWorkspaceTitle.textContent = config.emptyTitle;
     elements.emptyWorkspaceText.textContent = config.emptyText;
-    elements.emptyNewWorkspaceItemButton.textContent = `Criar ${config.singular}`;
+    elements.emptyNewWorkspaceItemButton.textContent = workspaceMode === "images" ? "Adicionar imagem" : `Criar ${config.singular}`;
     document.querySelectorAll("[data-workspace-mode]").forEach(button => {
         button.classList.toggle("active", button.dataset.workspaceMode === workspaceMode);
     });
 
     if (workspaceMode === "chapters") {
+        clearImageObjectUrls();
         renderChapterList();
         const chapter = currentChapter();
         elements.noChapterView.classList.toggle("hidden", Boolean(chapter));
         elements.chapterEditorView.classList.toggle("hidden", !chapter);
         elements.worldbuildingEditorView.classList.add("hidden");
+        elements.imageGalleryView.classList.add("hidden");
         if (!chapter) {
             editorSelection = { start: 0, end: 0 };
             syncFormattingToolbar();
@@ -454,11 +473,24 @@ function renderWorkspace() {
         return;
     }
 
+    if (workspaceMode === "images") {
+        elements.noChapterView.classList.add("hidden");
+        elements.chapterEditorView.classList.add("hidden");
+        elements.worldbuildingEditorView.classList.add("hidden");
+        elements.imageGalleryView.classList.remove("hidden");
+        editorSelection = { start: 0, end: 0 };
+        syncFormattingToolbar();
+        renderImageGallery();
+        return;
+    }
+
+    clearImageObjectUrls();
     renderWorldbuildingList();
     const item = currentWorldbuildingItem();
     elements.noChapterView.classList.toggle("hidden", Boolean(item));
     elements.chapterEditorView.classList.add("hidden");
     elements.worldbuildingEditorView.classList.toggle("hidden", !item);
+    elements.imageGalleryView.classList.add("hidden");
     editorSelection = { start: 0, end: 0 };
     syncFormattingToolbar();
     if (item) renderWorldbuildingEditor(item);
@@ -490,13 +522,15 @@ function selectChapter(id) {
 }
 
 function switchWorkspaceMode(mode) {
-    if (!currentProject || !["chapters", "characters", "locations"].includes(mode)) return;
+    if (!currentProject || !["chapters", "characters", "locations", "images"].includes(mode)) return;
     if (mode === "characters" && !webSettings.showCharactersTab) return;
     if (mode === "locations" && !webSettings.showLocationsTab) return;
     workspaceMode = mode;
     viewMode = "edit";
     if (mode === "chapters") {
         selectedChapterId ??= currentProject.chapters?.slice().sort((a, b) => a.orderIndex - b.orderIndex)[0]?.id ?? null;
+        selectedWorldbuildingId = null;
+    } else if (mode === "images") {
         selectedWorldbuildingId = null;
     } else {
         const items = currentProject[mode] ?? [];
@@ -505,6 +539,219 @@ function switchWorkspaceMode(mode) {
             : items[0]?.id ?? null;
     }
     renderWorkspace();
+}
+
+function clearImageObjectUrls() {
+    for (const url of imageObjectUrls) URL.revokeObjectURL(url);
+    imageObjectUrls = [];
+}
+
+function imageMedia(image) {
+    if (!image?.mediaId) return null;
+    return (currentProject?.media ?? []).find(media => media.id === image.mediaId) ?? null;
+}
+
+function resolveImageSource(image) {
+    const media = imageMedia(image);
+    if (media?.blob instanceof Blob) {
+        const url = URL.createObjectURL(media.blob);
+        imageObjectUrls.push(url);
+        return url;
+    }
+    return String(image?.url ?? "");
+}
+
+function renderImageSidebarList() {
+    elements.chapterList.replaceChildren();
+    const images = currentProject?.images ?? [];
+    if (!images.length) {
+        const empty = document.createElement("div");
+        empty.className = "muted small";
+        empty.textContent = "Nenhuma imagem.";
+        elements.chapterList.append(empty);
+        return;
+    }
+
+    images.forEach((image, index) => {
+        const button = document.createElement("button");
+        button.className = "chapter-item";
+        button.innerHTML = `<span class="chapter-item-title"></span><span class="chapter-item-meta"></span>`;
+        button.querySelector(".chapter-item-title").textContent = image.description?.trim() || `Imagem ${index + 1}`;
+        button.querySelector(".chapter-item-meta").textContent = image.mediaId ? "arquivo incorporado" : "URL";
+        button.addEventListener("click", () => document.getElementById(`image-card-${image.id}`)?.scrollIntoView({ behavior: webSettings.reducedMotion ? "auto" : "smooth", block: "center" }));
+        elements.chapterList.append(button);
+    });
+}
+
+function renderImageGallery() {
+    clearImageObjectUrls();
+    renderImageSidebarList();
+    elements.imageGrid.replaceChildren();
+    const images = currentProject?.images ?? [];
+
+    if (!images.length) {
+        const empty = document.createElement("div");
+        empty.className = "image-empty";
+        empty.textContent = "Nenhuma imagem de referência. Use o botão + para adicionar uma URL ou “Adicionar arquivo” para incorporar uma imagem local.";
+        elements.imageGrid.append(empty);
+        return;
+    }
+
+    for (const [index, image] of images.entries()) {
+        const card = document.createElement("article");
+        card.className = "image-card";
+        card.id = `image-card-${image.id}`;
+
+        const preview = document.createElement("div");
+        preview.className = "image-card-preview";
+        const fallback = document.createElement("div");
+        fallback.className = "image-card-fallback hidden";
+        fallback.textContent = "Não foi possível carregar a imagem.";
+        const img = document.createElement("img");
+        img.loading = "lazy";
+        img.alt = image.description || `Imagem de referência ${index + 1}`;
+        img.src = resolveImageSource(image);
+        img.addEventListener("error", () => {
+            img.classList.add("broken");
+            fallback.classList.remove("hidden");
+        });
+        preview.append(img, fallback);
+
+        const body = document.createElement("div");
+        body.className = "image-card-body";
+        const description = document.createElement("div");
+        description.className = "image-card-description";
+        description.textContent = image.description?.trim() || "Sem descrição";
+        const meta = document.createElement("div");
+        meta.className = "image-card-meta";
+        meta.textContent = `${image.mediaId ? "Arquivo incorporado" : "URL externa"} • ${formatDate(image.createdAt ?? Date.now())}`;
+        const actions = document.createElement("div");
+        actions.className = "image-card-actions";
+        const edit = document.createElement("button");
+        edit.className = "secondary-button compact";
+        edit.textContent = "Descrição";
+        edit.addEventListener("click", () => editImageDescription(image));
+        const remove = document.createElement("button");
+        remove.className = "secondary-button compact danger-text";
+        remove.textContent = "Excluir";
+        remove.addEventListener("click", () => deleteImageReference(image));
+        actions.append(edit, remove);
+        body.append(description, meta, actions);
+        card.append(preview, body);
+        elements.imageGrid.append(card);
+    }
+}
+
+function normalizeRemoteImageUrl(value) {
+    let url;
+    try { url = new URL(String(value).trim()); }
+    catch (_) { throw new Error("Informe uma URL de imagem válida."); }
+    if (!['http:', 'https:'].includes(url.protocol)) throw new Error("Use uma URL http:// ou https://.");
+    return url.href;
+}
+
+async function createImageFromUrl() {
+    if (!currentProject) return;
+    const input = await promptText({
+        title: "Adicionar imagem",
+        label: "URL da imagem",
+        hint: "A referência será incluída no backup; o arquivo remoto não é baixado automaticamente."
+    });
+    if (!input?.trim()) return;
+
+    let url;
+    try { url = normalizeRemoteImageUrl(input); }
+    catch (error) { showToast(error.message, 5000); return; }
+
+    const description = await promptText({ title: "Descrição da imagem", label: "Descrição opcional" });
+    if (description === null) return;
+    currentProject.images ??= [];
+    currentProject.images.push({
+        id: crypto.randomUUID(),
+        url,
+        description: description.trim(),
+        createdAt: Date.now(),
+        mediaId: null
+    });
+    await persistNow();
+    renderWorkspace();
+    showToast("Imagem adicionada à galeria.");
+}
+
+function safeImageExtension(file) {
+    const fromName = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (fromName && fromName.length <= 8) return fromName;
+    const fromMime = file.type.split("/")[1]?.toLowerCase().replace("jpeg", "jpg").replace(/[^a-z0-9]/g, "");
+    return fromMime || "bin";
+}
+
+async function addLocalImage(file) {
+    if (!currentProject || !file) return;
+    if (!file.type.startsWith("image/")) {
+        showToast("Selecione um arquivo de imagem.", 5000);
+        return;
+    }
+    if (file.size > MAX_LOCAL_IMAGE_BYTES) {
+        showToast("A imagem excede o limite de 100 MB.", 5000);
+        return;
+    }
+
+    const description = await promptText({
+        title: "Adicionar arquivo",
+        label: "Descrição opcional",
+        initial: file.name.replace(/\.[^.]+$/, "")
+    });
+    if (description === null) return;
+
+    const mediaId = crypto.randomUUID();
+    currentProject.media ??= [];
+    currentProject.images ??= [];
+    currentProject.media.push({
+        id: mediaId,
+        entryName: `media/${crypto.randomUUID()}.${safeImageExtension(file)}`,
+        blob: file
+    });
+    currentProject.images.push({
+        id: crypto.randomUUID(),
+        url: file.name,
+        description: description.trim(),
+        createdAt: Date.now(),
+        mediaId
+    });
+    await persistNow();
+    renderWorkspace();
+    showToast("Arquivo incorporado ao livro.");
+}
+
+async function editImageDescription(image) {
+    const description = await promptText({
+        title: "Descrição da imagem",
+        label: "Descrição",
+        initial: image.description ?? ""
+    });
+    if (description === null) return;
+    image.description = description.trim();
+    await persistNow();
+    renderWorkspace();
+}
+
+function mediaStillReferenced(mediaId) {
+    if (!mediaId || !currentProject) return false;
+    return [currentProject.characters ?? [], currentProject.locations ?? [], currentProject.images ?? []]
+        .some(items => items.some(item => item.mediaId === mediaId));
+}
+
+async function deleteImageReference(image) {
+    if (!currentProject) return;
+    if (!await confirmAction("Excluir imagem", "Excluir esta imagem de referência do livro?")) return;
+    const mediaId = image.mediaId ?? null;
+    currentProject.images = (currentProject.images ?? []).filter(item => item.id !== image.id);
+    if (mediaId && !mediaStillReferenced(mediaId)) {
+        currentProject.media = (currentProject.media ?? []).filter(media => media.id !== mediaId);
+    }
+    await persistNow();
+    renderWorkspace();
+    showToast("Imagem excluída.");
 }
 
 function updateEditorMeta() {
@@ -780,11 +1027,15 @@ async function createWorkspaceItem() {
         await createChapter();
         return;
     }
+    if (workspaceMode === "images") {
+        await createImageFromUrl();
+        return;
+    }
     await createWorldbuildingItem();
 }
 
 async function createWorldbuildingItem() {
-    if (!currentProject || workspaceMode === "chapters") return;
+    if (!currentProject || !["characters", "locations"].includes(workspaceMode)) return;
     const config = workspaceConfig();
     const name = await promptText({
         title: `Novo ${config.singular}`,
@@ -978,6 +1229,14 @@ function bindEvents() {
     elements.importInput.addEventListener("change", event => event.target.files?.[0] && importSelectedBook(event.target.files[0]));
     elements.newWorkspaceItemButton.addEventListener("click", createWorkspaceItem);
     elements.emptyNewWorkspaceItemButton.addEventListener("click", createWorkspaceItem);
+    elements.addLocalImageButton.addEventListener("click", () => {
+        elements.localImageInput.value = "";
+        elements.localImageInput.click();
+    });
+    elements.localImageInput.addEventListener("change", event => {
+        const file = event.target.files?.[0];
+        if (file) addLocalImage(file);
+    });
     elements.saveVersionButton.addEventListener("click", () => saveCurrentVersion());
 
     document.querySelectorAll("[data-workspace-mode]").forEach(button => {

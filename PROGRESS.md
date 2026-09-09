@@ -344,6 +344,16 @@
 - Criado `scripts/test-web-revision.mjs`, cobrindo deteccao, contagens, correcao individual e correcao em lote.
 - A etapa inicial do GitHub Actions passou a validar contrato de backup, formatacao e revisao Web antes de configurar Java/Gradle.
 
+## Modulo 28 — Galeria de imagens Web (2026-09-09)
+
+- Adicionada area `Imagens` ao workspace Web, com galeria responsiva de referencias do livro.
+- O botao `+` adiciona imagens por URL `http/https`, mantendo compatibilidade direta com `ImageReference` do Android.
+- A galeria tambem aceita arquivos locais `image/*` de ate 100 MB; o arquivo e salvo como `Blob` no IndexedDB e ligado ao item por `mediaId`.
+- Imagens locais entram em `media/` no backup ZIP e sao restauradas pelo Android/Web sem depender do caminho original do navegador.
+- Descricoes podem ser editadas e imagens excluidas; quando a ultima referencia de uma midia e removida, o Blob orfao tambem e eliminado.
+- Smoke test em Chrome real confirmou uma imagem remota + uma PNG local, persistencia no projeto e round-trip ZIP restaurando 2 imagens e 1 Blob com o mesmo tamanho.
+- `validate-backup-contract.mjs` passou a incluir uma midia incorporada no teste executado pelo CI, garantindo o vinculo `images[].mediaEntry`/`mediaId` entre exportacao e importacao.
+
 ## Observacoes
 
 - O ambiente local atual possui Java/Android SDK suficientes para `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` em modo offline.

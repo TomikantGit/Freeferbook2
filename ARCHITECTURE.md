@@ -202,6 +202,8 @@ UI Web
 
 O navegador guarda os dados localmente. Não há sincronização em nuvem nesta fase; para mover conteúdo entre Android/Web, usar o backup compatível.
 
+A galeria Web permite referências `http/https` e arquivos locais. Arquivos locais são armazenados como `Blob` em `project.media`, ligados a `images[].mediaId`; o exportador os materializa em `media/*` e o Android restaura essas entradas para URIs locais.
+
 Preferências Web ficam separadas dos projetos em `localStorage` (`freeferbook-web-settings-v1`). Elas controlam apenas apresentação/comportamento local do navegador e não entram no backup do livro. As categorias seguem o mesmo agrupamento conceitual do Android (`Aparência`, `Funcionalidades`, `Extras`) e iniciam recolhidas.
 
 No editor Web, números de linha são derivados das quebras reais do rascunho e o gutter acompanha o `scrollTop` do `textarea`. Tema, tamanho do texto, altura de linha, visibilidade de Personagens/Locais e redução de movimento são aplicados via atributos/CSS custom properties, sem recarregar a aplicação.
@@ -375,4 +377,5 @@ contracts/
 12. Mudança no formato de backup: manter compatibilidade retroativa quando possível e atualizar a fixture/validador junto da implementação.
 	13. Configurações específicas da Web não devem alterar silenciosamente o contrato de backup; preferências de navegador permanecem locais salvo quando houver um contrato multiplataforma explícito.
 	14. Regra de formatação Web deve permanecer em módulo puro/testável; eventos de DOM, foco e seleção ficam em `app.js`.
-	15. Regras determinísticas espelhadas entre Android e Web, como revisão textual, devem manter os mesmos critérios e testes equivalentes antes de serem estendidas.
+15. Regras determinísticas espelhadas entre Android e Web, como revisão textual, devem manter os mesmos critérios e testes equivalentes antes de serem estendidas.
+16. Mídia Web incorporada deve ser referenciada por `mediaId`; ao remover a última referência, eliminar o Blob órfão para evitar crescimento silencioso do backup.
