@@ -219,6 +219,14 @@ Android e Web devem tratar esse formato como contrato versionado. Mudanças inco
 
 O importador Web lê ZIP STORE e DEFLATE. A exportação Web usa ZIP STORE para não depender de bibliotecas JavaScript externas e continua compatível com `ZipFile`/`ZipOutputStream` do Android.
 
+### Formatação Markdown na Web
+
+A regra de edição Markdown Web fica em `web/js/formatting.js`, separada da DOM/UI. Ela replica os formatos usados pelo Android: negrito, itálico, riscado, sublinhado, destaque, H3, citação, lista com marcadores, lista numerada, checklist e marcadores personalizados `•`, `→`, `★`, `✓`, `◆`.
+
+Formatos inline preservam a seleção apenas sobre o conteúdo. Formatos de lista substituem prefixos já reconhecidos em vez de acumulá-los, permitindo conversão direta entre lista numerada, checklist, bullet e marcador customizado.
+
+`scripts/test-web-formatting.mjs` cobre a regra pura e roda no GitHub Actions antes do build Android. A integração visual permanece em `app.js`, que captura `selectionStart`/`selectionEnd`, aplica o resultado e devolve foco/seleção ao `textarea`.
+
 ### Release conjunta Android + Web
 
 O workflow `.github/workflows/android-test-release.yml` produz, no mesmo commit:
@@ -337,6 +345,7 @@ web/
 └─ js/
    ├─ app.js
    ├─ db.js
+   ├─ formatting.js
    ├─ markdown.js
    └─ archive.js
 
@@ -344,7 +353,8 @@ contracts/
 └─ book-backup-v1.sample.json
 
 scripts/
-└─ validate-backup-contract.mjs
+├─ validate-backup-contract.mjs
+└─ test-web-formatting.mjs
 ```
 
 ## Regras para novas implementações
@@ -362,3 +372,4 @@ scripts/
 11. A futura versão Desktop deve entrar somente depois de estabilizar os contratos Web/Android; priorizar extração gradual de regras puras para Kotlin Multiplatform, não uma migração total de uma vez.
 12. Mudança no formato de backup: manter compatibilidade retroativa quando possível e atualizar a fixture/validador junto da implementação.
 13. Configurações específicas da Web não devem alterar silenciosamente o contrato de backup; preferências de navegador permanecem locais salvo quando houver um contrato multiplataforma explícito.
+14. Regra de formatação Web deve permanecer em módulo puro/testável; eventos de DOM, foco e seleção ficam em `app.js`.

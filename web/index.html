@@ -119,6 +119,35 @@
                     </div>
 
                     <div id="editPane" class="mode-pane">
+                        <div id="formattingToolbar" class="formatting-toolbar" aria-label="Formatação Markdown">
+                            <div class="formatting-group" aria-label="Estilos de texto">
+                                <button type="button" class="formatting-button" data-format="bold" title="Negrito (Ctrl+B)"><strong>B</strong></button>
+                                <button type="button" class="formatting-button" data-format="italic" title="Itálico (Ctrl+I)"><em>I</em></button>
+                                <button type="button" class="formatting-button" data-format="strike" title="Riscado"><s>S</s></button>
+                                <button type="button" class="formatting-button" data-format="underline" title="Sublinhado (Ctrl+U)"><u>U</u></button>
+                                <button type="button" class="formatting-button" data-format="highlight" title="Destaque">==</button>
+                            </div>
+                            <div class="formatting-group" aria-label="Blocos">
+                                <button type="button" class="formatting-button text-format-button" data-format="heading" title="Título H3">H3</button>
+                                <button type="button" class="formatting-button" data-format="quote" title="Citação">❯</button>
+                            </div>
+                            <div class="formatting-group" aria-label="Listas">
+                                <button type="button" class="formatting-button" data-format="bulleted" title="Lista com marcadores">•</button>
+                                <button type="button" class="formatting-button text-format-button" data-format="numbered" title="Lista numerada">1.</button>
+                                <button type="button" class="formatting-button" data-format="checklist" title="Checklist">☐</button>
+                                <div class="custom-marker-wrap">
+                                    <button type="button" class="formatting-button" id="customMarkerButton" title="Marcador personalizado">◆⌄</button>
+                                    <div id="customMarkerPicker" class="custom-marker-picker hidden" role="menu" aria-label="Marcadores personalizados">
+                                        <button type="button" data-custom-marker="•">•</button>
+                                        <button type="button" data-custom-marker="→">→</button>
+                                        <button type="button" data-custom-marker="★">★</button>
+                                        <button type="button" data-custom-marker="✓">✓</button>
+                                        <button type="button" data-custom-marker="◆">◆</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <span id="formattingHint" class="formatting-hint">Selecione um trecho para formatar.</span>
+                        </div>
                         <div class="editor-input-shell">
                             <pre id="lineNumberGutter" class="line-number-gutter" aria-hidden="true">1</pre>
                             <textarea id="editor" class="editor-textarea" spellcheck="true" placeholder="Comece a escrever…"></textarea>

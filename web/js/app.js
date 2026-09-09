@@ -1,6 +1,7 @@
 import { listProjects, saveProject, removeProject, newProject, newChapter } from "./db.js";
 import { renderMarkdown, textStats } from "./markdown.js";
 import { importFreeferbookArchive, exportFreeferbookArchive, downloadBlob } from "./archive.js";
+import { applyCustomMarker, applyMarkdownFormat } from "./formatting.js";
 
 const $ = selector => document.querySelector(selector);
 const elements = {
@@ -17,6 +18,10 @@ const elements = {
     chapterEditorView: $("#chapterEditorView"),
     editor: $("#editor"),
     lineNumberGutter: $("#lineNumberGutter"),
+    formattingToolbar: $("#formattingToolbar"),
+    formattingHint: $("#formattingHint"),
+    customMarkerButton: $("#customMarkerButton"),
+    customMarkerPicker: $("#customMarkerPicker"),
     editorStats: $("#editorStats"),
     draftStatus: $("#draftStatus"),
     previewContent: $("#previewContent"),
@@ -88,6 +93,7 @@ let viewMode = "edit";
 let persistTimer = null;
 let toastTimer = null;
 let webSettings = loadWebSettings();
+let editorSelection = { start: 0, end: 0 };
 
 function loadWebSettings() {
     try {
@@ -143,6 +149,59 @@ function updateWebSetting(key, value) {
     webSettings = { ...webSettings, [key]: value };
     storeWebSettings();
     applyWebSettings();
+}
+
+function captureEditorSelection() {
+    if (!elements.editor) return editorSelection;
+    editorSelection = {
+        start: elements.editor.selectionStart ?? 0,
+        end: elements.editor.selectionEnd ?? 0
+    };
+    syncFormattingToolbar();
+    return editorSelection;
+}
+
+function syncFormattingToolbar() {
+    const selectedLength = Math.abs(editorSelection.end - editorSelection.start);
+    const disabled = workspaceMode !== "chapters" || !currentChapter() || selectedLength === 0;
+    elements.formattingToolbar?.querySelectorAll("[data-format]").forEach(button => {
+        button.disabled = disabled;
+    });
+    if (elements.customMarkerButton) elements.customMarkerButton.disabled = disabled;
+    if (elements.formattingHint) {
+        elements.formattingHint.textContent = disabled
+            ? "Selecione um trecho para formatar."
+            : `${selectedLength} caractere${selectedLength === 1 ? "" : "s"} selecionado${selectedLength === 1 ? "" : "s"}.`;
+    }
+    if (disabled) elements.customMarkerPicker?.classList.add("hidden");
+}
+
+function applyFormattingResult(result) {
+    const chapter = currentChapter();
+    if (!chapter || !result) return;
+    chapter.draftContent = result.text;
+    elements.editor.value = result.text;
+    editorSelection = { start: result.start, end: result.end };
+    elements.editor.focus();
+    elements.editor.setSelectionRange(result.start, result.end);
+    updateEditorMeta();
+    schedulePersist();
+    syncFormattingToolbar();
+}
+
+function applyEditorFormat(format) {
+    const chapter = currentChapter();
+    if (!chapter) return;
+    const { start, end } = editorSelection;
+    applyFormattingResult(applyMarkdownFormat(chapter.draftContent ?? "", start, end, format));
+}
+
+function applyEditorCustomMarker(marker) {
+    const chapter = currentChapter();
+    if (!chapter) return;
+    const { start, end } = editorSelection;
+    applyFormattingResult(applyCustomMarker(chapter.draftContent ?? "", start, end, marker));
+    elements.customMarkerPicker.classList.add("hidden");
 }
 
 function currentChapter() {
@@ -374,10 +433,19 @@ function renderWorkspace() {
         elements.noChapterView.classList.toggle("hidden", Boolean(chapter));
         elements.chapterEditorView.classList.toggle("hidden", !chapter);
         elements.worldbuildingEditorView.classList.add("hidden");
-        if (!chapter) return;
+        if (!chapter) {
+            editorSelection = { start: 0, end: 0 };
+            syncFormattingToolbar();
+            return;
+        }
 
-        if (elements.editor.value !== chapter.draftContent) elements.editor.value = chapter.draftContent ?? "";
+        if (elements.editor.value !== chapter.draftContent) {
+            elements.editor.value = chapter.draftContent ?? "";
+            editorSelection = { start: 0, end: 0 };
+            elements.editor.setSelectionRange(0, 0);
+        }
         updateEditorMeta();
+        captureEditorSelection();
         switchViewMode(viewMode, false);
         return;
     }
@@ -387,6 +455,8 @@ function renderWorkspace() {
     elements.noChapterView.classList.toggle("hidden", Boolean(item));
     elements.chapterEditorView.classList.add("hidden");
     elements.worldbuildingEditorView.classList.toggle("hidden", !item);
+    editorSelection = { start: 0, end: 0 };
+    syncFormattingToolbar();
     if (item) renderWorldbuildingEditor(item);
 }
 
@@ -818,11 +888,44 @@ function bindEvents() {
         const chapter = currentChapter();
         if (!chapter) return;
         chapter.draftContent = event.target.value;
+        captureEditorSelection();
         updateEditorMeta();
         schedulePersist();
     });
     elements.editor.addEventListener("scroll", () => {
         elements.lineNumberGutter.scrollTop = elements.editor.scrollTop;
+    });
+    elements.editor.addEventListener("select", captureEditorSelection);
+    elements.editor.addEventListener("keyup", captureEditorSelection);
+    elements.editor.addEventListener("click", captureEditorSelection);
+    elements.editor.addEventListener("keydown", event => {
+        if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+        const key = event.key.toLowerCase();
+        const shortcut = key === "b" ? "bold" : key === "i" ? "italic" : key === "u" ? "underline" : null;
+        if (!shortcut) return;
+        event.preventDefault();
+        captureEditorSelection();
+        applyEditorFormat(shortcut);
+    });
+
+    elements.formattingToolbar.addEventListener("mousedown", event => {
+        if (event.target.closest("button")) event.preventDefault();
+    });
+    elements.formattingToolbar.addEventListener("click", event => {
+        const format = event.target.closest("[data-format]")?.dataset.format;
+        if (format) {
+            applyEditorFormat(format);
+            return;
+        }
+        if (event.target.closest("#customMarkerButton")) {
+            event.stopPropagation();
+            if (!elements.customMarkerButton.disabled) elements.customMarkerPicker.classList.toggle("hidden");
+        }
+    });
+    elements.customMarkerPicker.addEventListener("click", event => {
+        event.stopPropagation();
+        const marker = event.target.closest("[data-custom-marker]")?.dataset.customMarker;
+        if (marker) applyEditorCustomMarker(marker);
     });
 
     $("#settingsButton").addEventListener("click", () => {
@@ -849,7 +952,10 @@ function bindEvents() {
         if (action === "rename") renameCurrentChapter();
         if (action === "delete") deleteCurrentChapter();
     });
-    document.addEventListener("click", () => elements.chapterMenu.classList.add("hidden"));
+    document.addEventListener("click", () => {
+        elements.chapterMenu.classList.add("hidden");
+        elements.customMarkerPicker.classList.add("hidden");
+    });
 
     $("#openSidebarButton").addEventListener("click", () => elements.sidebar.classList.add("open"));
     $("#closeSidebarButton").addEventListener("click", () => elements.sidebar.classList.remove("open"));

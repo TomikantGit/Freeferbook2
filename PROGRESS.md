@@ -323,6 +323,17 @@
 - Tema/tipografia sao aplicados por CSS custom properties; ocultar Personagens/Locais remove a aba visual sem excluir os dados existentes.
 - Smoke test em Chrome real confirmou nos inicialmente recolhidos, numeros de linha, tema escuro, tamanho de fonte, ocultacao de Personagens e persistencia das preferencias apos `reload`.
 
+## Modulo 26 — Toolbar Markdown Web (2026-09-09)
+
+- O editor Web ganhou toolbar compacta de formatacao com negrito, italico, riscado, sublinhado, destaque, H3, citacao, lista com marcadores, lista numerada e checklist.
+- A paleta de marcadores personalizados passou a oferecer os mesmos simbolos do Android: `•`, `→`, `★`, `✓` e `◆`.
+- Criado `web/js/formatting.js` com regra pura de toggle inline, prefixos por linha e conversao entre estilos de lista sem empilhar marcadores anteriores.
+- A selecao do `textarea` e preservada ao clicar na toolbar; o conteudo permanece selecionado por dentro dos marcadores inline, permitindo aplicar/remover estilos sucessivamente.
+- Adicionados atalhos `Ctrl/Cmd+B`, `Ctrl/Cmd+I` e `Ctrl/Cmd+U`.
+- Criado `scripts/test-web-formatting.mjs`; o GitHub Actions agora valida formatacao Web antes de configurar Java e compilar o APK.
+- Smoke test em Chrome real confirmou negrito + sublinhado combinado, lista numerada, conversao para marcador `★` e renderizacao no preview.
+- A renderizacao continuou usando `web/js/markdown.js`, portanto editor e preview compartilham a mesma sintaxe do Android.
+
 ## Observacoes
 
 - O ambiente local atual possui Java/Android SDK suficientes para `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` em modo offline.

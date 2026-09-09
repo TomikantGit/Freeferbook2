@@ -234,8 +234,55 @@ button { cursor: pointer; }
 .segment.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
 .mode-pane { height: 100%; min-height: 0; overflow: auto; }
 
+.formatting-toolbar {
+    min-height: 46px;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    scrollbar-width: thin;
+}
+.formatting-group { display: inline-flex; flex: 0 0 auto; gap: 4px; padding-right: 7px; border-right: 1px solid var(--border); }
+.formatting-group:last-of-type { border-right: 0; padding-right: 0; }
+.formatting-button {
+    width: 34px;
+    height: 32px;
+    min-height: 32px;
+    padding: 0;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text);
+    font-weight: 700;
+}
+.formatting-button:hover, .formatting-button:focus-visible { background: var(--surface-2); border-color: var(--border); outline: none; }
+.formatting-button:disabled { opacity: .38; cursor: default; background: transparent; border-color: transparent; }
+.text-format-button { font-size: .75rem; }
+.formatting-hint { flex: 1; min-width: 170px; color: var(--muted); font-size: .75rem; text-align: right; white-space: nowrap; }
+.custom-marker-wrap { position: relative; }
+.custom-marker-picker {
+    position: absolute;
+    top: calc(100% + 7px);
+    right: 0;
+    z-index: 45;
+    display: flex;
+    gap: 3px;
+    padding: 5px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+.custom-marker-picker button { width: 32px; height: 32px; border: 0; border-radius: 7px; background: transparent; color: var(--text); font-size: 1rem; }
+.custom-marker-picker button:hover { background: var(--surface-2); }
+
 .editor-input-shell {
-    height: calc(100% - 38px);
+    height: calc(100% - 84px);
     min-height: 300px;
     display: flex;
     overflow: hidden;
@@ -389,6 +436,8 @@ button { cursor: pointer; }
     .workspace-tab { font-size: .66rem; padding-inline: 3px; }
     .worldbuilding-editor { padding: 18px 14px 50px; }
     .worldbuilding-form { padding: 16px; }
+    .formatting-toolbar { padding-inline: 7px; }
+    .formatting-hint { display: none; }
     .settings-control { align-items: flex-start; flex-direction: column; }
     .settings-range-control > div { width: 100%; min-width: 0; }
     .settings-range-control input[type="range"] { flex: 1; width: auto; }
