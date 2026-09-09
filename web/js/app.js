@@ -80,6 +80,8 @@ const elements = {
     reducedMotion: $("#reducedMotion"),
     settingsWebVersion: $("#settingsWebVersion"),
     settingsAndroidVersion: $("#settingsAndroidVersion"),
+    connectionStatus: $("#connectionStatus"),
+    installWebAppButton: $("#installWebAppButton"),
     diffDialog: $("#diffDialog"),
     diffDialogTitle: $("#diffDialogTitle"),
     diffDialogLabels: $("#diffDialogLabels"),
@@ -110,6 +112,7 @@ let webSettings = loadWebSettings();
 let editorSelection = { start: 0, end: 0 };
 let imageObjectUrls = [];
 let compareBaseVersionId = null;
+let deferredInstallPrompt = null;
 
 const MAX_LOCAL_IMAGE_BYTES = 100 * 1024 * 1024;
 
@@ -1324,6 +1327,34 @@ async function loadReleaseInfo() {
     elements.settingsAndroidVersion.textContent = androidVersion;
 }
 
+function updateConnectionStatus() {
+    const online = navigator.onLine;
+    elements.connectionStatus.textContent = online ? "Online" : "Offline — dados locais disponíveis";
+    elements.connectionStatus.classList.toggle("online", online);
+    elements.connectionStatus.classList.toggle("offline", !online);
+}
+
+async function registerServiceWorker() {
+    if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
+    try {
+        const hadController = Boolean(navigator.serviceWorker.controller);
+        await navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" });
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+            if (hadController) showToast("Nova versão Web pronta. Recarregue a página quando for conveniente.", 6000);
+        }, { once: true });
+    } catch (error) {
+        console.warn("Service Worker não pôde ser registrado.", error);
+    }
+}
+
+async function promptWebInstall() {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice.catch(() => null);
+    deferredInstallPrompt = null;
+    elements.installWebAppButton.classList.add("hidden");
+}
+
 function bindEvents() {
     $("#newBookButton").addEventListener("click", createBook);
     $("#welcomeNewBookButton").addEventListener("click", createBook);
@@ -1405,6 +1436,20 @@ function bindEvents() {
     elements.showCharactersTab.addEventListener("change", event => updateWebSetting("showCharactersTab", event.target.checked));
     elements.showLocationsTab.addEventListener("change", event => updateWebSetting("showLocationsTab", event.target.checked));
     elements.reducedMotion.addEventListener("change", event => updateWebSetting("reducedMotion", event.target.checked));
+    elements.installWebAppButton.addEventListener("click", promptWebInstall);
+
+    window.addEventListener("online", updateConnectionStatus);
+    window.addEventListener("offline", updateConnectionStatus);
+    window.addEventListener("beforeinstallprompt", event => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+        elements.installWebAppButton.classList.remove("hidden");
+    });
+    window.addEventListener("appinstalled", () => {
+        deferredInstallPrompt = null;
+        elements.installWebAppButton.classList.add("hidden");
+        showToast("Freeferbook Web instalado.");
+    });
 
     document.querySelectorAll("[data-view-mode]").forEach(button => button.addEventListener("click", () => switchViewMode(button.dataset.viewMode)));
 
@@ -1431,6 +1476,8 @@ function bindEvents() {
 async function init() {
     applyWebSettings({ rerenderIfNeeded: false });
     bindEvents();
+    updateConnectionStatus();
+    registerServiceWorker();
     try {
         projects = await listProjects();
     } catch (error) {

@@ -342,6 +342,7 @@ com.livrohub/
 
 	web/
 	├─ index.html
+	├─ sw.js
 	├─ styles.css
 	├─ manifest.webmanifest
 	└─ js/
@@ -360,6 +361,7 @@ contracts/
 	├─ validate-backup-contract.mjs
 	├─ test-web-diff.mjs
 	├─ test-web-formatting.mjs
+	├─ test-web-pwa.mjs
 	└─ test-web-revision.mjs
 ```
 
@@ -382,3 +384,4 @@ contracts/
 15. Regras determinísticas espelhadas entre Android e Web, como revisão textual, devem manter os mesmos critérios e testes equivalentes antes de serem estendidas.
 	16. Mídia Web incorporada deve ser referenciada por `mediaId`; ao remover a última referência, eliminar o Blob órfão para evitar crescimento silencioso do backup.
 	17. Comparação de versões Web deve usar `diff.js` como regra pura; a UI apenas seleciona versões e renderiza linhas/spans.
+	18. O Service Worker Web deve manter metadados de release em estratégia network-first e nunca cachear o APK de atualização.

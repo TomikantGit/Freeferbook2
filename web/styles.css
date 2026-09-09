@@ -166,6 +166,9 @@ button { cursor: pointer; }
 .book-item-title, .chapter-item-title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .book-item-meta, .chapter-item-meta { color: var(--muted); font-size: .75rem; }
 .sidebar-footer { display: grid; gap: 5px; padding-top: 10px; border-top: 1px solid var(--border); }
+.connection-status.online::before, .connection-status.offline::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; }
+.connection-status.online::before { background: #2e7d32; }
+.connection-status.offline::before { background: #b3261e; }
 .text-link { color: var(--primary); font-weight: 650; text-decoration: none; font-size: .86rem; }
 
 .main-panel { min-width: 0; min-height: 100vh; }

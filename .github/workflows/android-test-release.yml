@@ -29,6 +29,7 @@ jobs:
           node scripts/test-web-formatting.mjs
           node scripts/test-web-revision.mjs
           node scripts/test-web-diff.mjs
+          node scripts/test-web-pwa.mjs
 
       - name: Validar formatacao Web
         run: node scripts/test-web-formatting.mjs
@@ -132,6 +133,7 @@ jobs:
           SHORT_SHA="${GITHUB_SHA:0:7}"
 
           cp -R web/. update-site/
+          sed -i "s/__FREEFERBOOK_BUILD__/$GITHUB_SHA/g" update-site/sw.js
 
           cat > update-site/update.json <<EOF
           {

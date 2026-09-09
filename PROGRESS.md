@@ -364,6 +364,16 @@
 - Criado `scripts/test-web-diff.mjs`, executado no GitHub Actions junto dos testes de backup, formatacao e revisao.
 - Smoke test em Chrome real confirmou comparacao `Versao #1 -> Versao #2`, com `azul` removido, `verde` adicionado e nova linha detectada.
 
+## Modulo 30 — Web offline / PWA (2026-09-09)
+
+- Adicionado `web/sw.js` com cache versionado pelo commit de cada release; o workflow substitui o placeholder de build antes do deploy do Pages.
+- O shell Web (HTML, CSS, manifesto e modulos JavaScript) fica disponivel offline apos a primeira carga bem-sucedida.
+- Navegacao e assets usam estrategia network-first para priorizar arquivos da release atual e recorrer ao cache somente quando a rede falha.
+- `update.json` e `web-version.json` usam network-first para nao esconder releases novas; `freeferbook-test.apk` nunca entra no cache do Service Worker.
+- A sidebar passou a indicar estado `Online`/`Offline — dados locais disponíveis`.
+- A area Extras mostra `Instalar Freeferbook Web` somente quando o navegador dispara `beforeinstallprompt`; como o projeto ainda nao possui icone PWA proprio, nenhum asset visual foi inventado nesta etapa.
+- Criado `scripts/test-web-pwa.mjs`, que valida manifesto, registro do Service Worker, shell cacheavel e tratamento especial do canal de atualizacao.
+
 ## Observacoes
 
 - O ambiente local atual possui Java/Android SDK suficientes para `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` em modo offline.

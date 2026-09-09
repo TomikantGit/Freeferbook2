@@ -1,7 +1,9 @@
 {
   "name": "Freeferbook Web",
   "short_name": "Freeferbook",
+  "id": "./",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f8f7fb",
   "theme_color": "#6f2dbd",
