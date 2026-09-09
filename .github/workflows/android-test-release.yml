@@ -28,6 +28,7 @@ jobs:
           node scripts/validate-backup-contract.mjs
           node scripts/test-web-formatting.mjs
           node scripts/test-web-revision.mjs
+          node scripts/test-web-diff.mjs
 
       - name: Validar formatacao Web
         run: node scripts/test-web-formatting.mjs

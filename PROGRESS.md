@@ -354,6 +354,16 @@
 - Smoke test em Chrome real confirmou uma imagem remota + uma PNG local, persistencia no projeto e round-trip ZIP restaurando 2 imagens e 1 Blob com o mesmo tamanho.
 - `validate-backup-contract.mjs` passou a incluir uma midia incorporada no teste executado pelo CI, garantindo o vinculo `images[].mediaEntry`/`mediaId` entre exportacao e importacao.
 
+## Modulo 29 — Comparacao de versoes Web (2026-09-09)
+
+- Criado `web/js/diff.js` com diff por linha e spans inline por token/palavra, sem dependencia externa.
+- O algoritmo usa Myers para evitar matriz quadratica de LCS em capitulos maiores.
+- O Historico Web permite selecionar uma versao base e outra versao alvo; a ordem antiga/nova e definida pelo `sequenceNumber`.
+- O resultado abre em dialogo dedicado com linhas adicionadas/removidas/inalteradas e destaque inline de trechos alterados.
+- O resumo informa contagem de linhas adicionadas, removidas e inalteradas com concordancia singular/plural.
+- Criado `scripts/test-web-diff.mjs`, executado no GitHub Actions junto dos testes de backup, formatacao e revisao.
+- Smoke test em Chrome real confirmou comparacao `Versao #1 -> Versao #2`, com `azul` removido, `verde` adicionado e nova linha detectada.
+
 ## Observacoes
 
 - O ambiente local atual possui Java/Android SDK suficientes para `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` em modo offline.

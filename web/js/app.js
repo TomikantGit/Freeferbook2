@@ -3,6 +3,7 @@ import { renderMarkdown, textStats } from "./markdown.js";
 import { importFreeferbookArchive, exportFreeferbookArchive, downloadBlob } from "./archive.js";
 import { applyCustomMarker, applyMarkdownFormat } from "./formatting.js";
 import { applyAllSafeRevision, applyRevisionIssue, reviewText } from "./revision.js";
+import { compareText, diffSummary } from "./diff.js";
 
 const $ = selector => document.querySelector(selector);
 const elements = {
@@ -78,7 +79,12 @@ const elements = {
     showLocationsTab: $("#showLocationsTab"),
     reducedMotion: $("#reducedMotion"),
     settingsWebVersion: $("#settingsWebVersion"),
-    settingsAndroidVersion: $("#settingsAndroidVersion")
+    settingsAndroidVersion: $("#settingsAndroidVersion"),
+    diffDialog: $("#diffDialog"),
+    diffDialogTitle: $("#diffDialogTitle"),
+    diffDialogLabels: $("#diffDialogLabels"),
+    diffSummary: $("#diffSummary"),
+    diffLines: $("#diffLines")
 };
 
 const WEB_SETTINGS_KEY = "freeferbook-web-settings-v1";
@@ -103,6 +109,7 @@ let toastTimer = null;
 let webSettings = loadWebSettings();
 let editorSelection = { start: 0, end: 0 };
 let imageObjectUrls = [];
+let compareBaseVersionId = null;
 
 const MAX_LOCAL_IMAGE_BYTES = 100 * 1024 * 1024;
 
@@ -508,6 +515,7 @@ async function selectProject(id) {
     workspaceMode = "chapters";
     selectedChapterId = currentProject?.chapters?.slice().sort((a, b) => a.orderIndex - b.orderIndex)[0]?.id ?? null;
     selectedWorldbuildingId = null;
+    compareBaseVersionId = null;
     viewMode = "edit";
     elements.sidebar.classList.remove("open");
     renderAll();
@@ -517,6 +525,7 @@ function selectChapter(id) {
     workspaceMode = "chapters";
     selectedChapterId = id;
     selectedWorldbuildingId = null;
+    compareBaseVersionId = null;
     viewMode = "edit";
     renderWorkspace();
 }
@@ -823,6 +832,7 @@ function renderHistory() {
     const chapter = currentChapter();
     elements.historyList.replaceChildren();
     if (!chapter?.versions?.length) {
+        compareBaseVersionId = null;
         const empty = document.createElement("div");
         empty.className = "muted";
         empty.textContent = "Nenhuma versão salva ainda.";
@@ -831,22 +841,115 @@ function renderHistory() {
     }
 
     const versions = [...chapter.versions].sort((a, b) => b.sequenceNumber - a.sequenceNumber);
+    const baseVersion = versions.find(version => version.id === compareBaseVersionId) ?? null;
+    if (compareBaseVersionId && !baseVersion) compareBaseVersionId = null;
+
+    if (baseVersion) {
+        const banner = document.createElement("div");
+        banner.className = "history-compare-banner";
+        const text = document.createElement("div");
+        text.innerHTML = `<strong>Versão #${baseVersion.sequenceNumber} selecionada.</strong><div class="muted small">Escolha outra versão para comparar.</div>`;
+        const cancel = document.createElement("button");
+        cancel.className = "secondary-button compact";
+        cancel.textContent = "Cancelar";
+        cancel.addEventListener("click", () => {
+            compareBaseVersionId = null;
+            renderHistory();
+        });
+        banner.append(text, cancel);
+        elements.historyList.append(banner);
+    }
+
     for (const version of versions) {
         const item = document.createElement("div");
-        item.className = "history-item";
+        item.className = `history-item${baseVersion?.id === version.id ? " compare-base" : ""}`;
         const main = document.createElement("div");
         main.innerHTML = `<div class="history-title"></div><div class="muted small"></div><div class="history-snippet"></div>`;
         main.querySelector(".history-title").textContent = `Versão #${version.sequenceNumber}${version.message ? ` — ${version.message}` : ""}`;
         main.querySelector(".muted").textContent = `${formatDate(version.createdAt)} • ${version.wordCount} palavras`;
         main.querySelector(".history-snippet").textContent = version.content || "(versão vazia)";
 
+        const actions = document.createElement("div");
+        actions.className = "history-actions";
         const restore = document.createElement("button");
         restore.className = "secondary-button compact";
         restore.textContent = "Restaurar";
         restore.addEventListener("click", () => restoreVersion(version));
-        item.append(main, restore);
+
+        const compare = document.createElement("button");
+        compare.className = "secondary-button compact";
+        if (!baseVersion) {
+            compare.textContent = "Comparar";
+            compare.addEventListener("click", () => {
+                compareBaseVersionId = version.id;
+                renderHistory();
+            });
+        } else if (baseVersion.id === version.id) {
+            compare.textContent = "Base";
+            compare.disabled = true;
+        } else {
+            compare.textContent = "Comparar com esta";
+            compare.addEventListener("click", () => {
+                openVersionDiff(baseVersion, version);
+                compareBaseVersionId = null;
+                renderHistory();
+            });
+        }
+
+        actions.append(restore, compare);
+        item.append(main, actions);
         elements.historyList.append(item);
     }
+}
+
+function openVersionDiff(firstVersion, secondVersion) {
+    if (!firstVersion || !secondVersion || firstVersion.id === secondVersion.id) return;
+    const oldVersion = firstVersion.sequenceNumber <= secondVersion.sequenceNumber ? firstVersion : secondVersion;
+    const newVersion = oldVersion === firstVersion ? secondVersion : firstVersion;
+    const lines = compareText(oldVersion.content ?? "", newVersion.content ?? "");
+    const summary = diffSummary(lines);
+
+    elements.diffDialogTitle.textContent = currentChapter()?.title || "Capítulo";
+    elements.diffDialogLabels.textContent = `Versão #${oldVersion.sequenceNumber} → Versão #${newVersion.sequenceNumber}`;
+    elements.diffSummary.replaceChildren();
+    elements.diffLines.replaceChildren();
+
+    for (const [singular, plural, value] of [
+        ["adicionada", "adicionadas", summary.added],
+        ["removida", "removidas", summary.removed],
+        ["inalterada", "inalteradas", summary.unchanged]
+    ]) {
+        const item = document.createElement("span");
+        item.textContent = `${value} linha${value === 1 ? "" : "s"} ${value === 1 ? singular : plural}`;
+        elements.diffSummary.append(item);
+    }
+
+    if (!lines.length) {
+        const empty = document.createElement("div");
+        empty.className = "revision-empty";
+        empty.textContent = "As duas versões estão vazias.";
+        elements.diffLines.append(empty);
+    } else {
+        for (const line of lines) {
+            const row = document.createElement("div");
+            row.className = `diff-line ${line.type}`;
+            const prefix = document.createElement("div");
+            prefix.className = "diff-prefix";
+            prefix.textContent = line.prefix;
+            const text = document.createElement("div");
+            text.className = "diff-text";
+            for (const span of line.spans) {
+                const element = document.createElement("span");
+                element.className = `diff-span ${span.type}`;
+                element.textContent = span.text;
+                text.append(element);
+            }
+            row.append(prefix, text);
+            elements.diffLines.append(row);
+        }
+    }
+
+    elements.diffDialog.showModal();
 }
 
 function applyRevisionText(nextText) {

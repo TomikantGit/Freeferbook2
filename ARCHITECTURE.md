@@ -347,6 +347,7 @@ com.livrohub/
 	└─ js/
 	   ├─ app.js
 	   ├─ db.js
+	   ├─ diff.js
 	   ├─ formatting.js
 	   ├─ markdown.js
 	   ├─ revision.js
@@ -357,6 +358,7 @@ contracts/
 
 	scripts/
 	├─ validate-backup-contract.mjs
+	├─ test-web-diff.mjs
 	├─ test-web-formatting.mjs
 	└─ test-web-revision.mjs
 ```
@@ -378,4 +380,5 @@ contracts/
 	13. Configurações específicas da Web não devem alterar silenciosamente o contrato de backup; preferências de navegador permanecem locais salvo quando houver um contrato multiplataforma explícito.
 	14. Regra de formatação Web deve permanecer em módulo puro/testável; eventos de DOM, foco e seleção ficam em `app.js`.
 15. Regras determinísticas espelhadas entre Android e Web, como revisão textual, devem manter os mesmos critérios e testes equivalentes antes de serem estendidas.
-16. Mídia Web incorporada deve ser referenciada por `mediaId`; ao remover a última referência, eliminar o Blob órfão para evitar crescimento silencioso do backup.
+	16. Mídia Web incorporada deve ser referenciada por `mediaId`; ao remover a última referência, eliminar o Blob órfão para evitar crescimento silencioso do backup.
+	17. Comparação de versões Web deve usar `diff.js` como regra pura; a UI apenas seleciona versões e renderiza linhas/spans.

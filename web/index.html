@@ -335,6 +335,21 @@
     </form>
 </dialog>
 
+<dialog id="diffDialog" class="app-dialog diff-dialog">
+    <form method="dialog">
+        <div class="diff-dialog-header">
+            <div>
+                <div class="section-label">Comparação de versões</div>
+                <h2 id="diffDialogTitle">Diferenças</h2>
+                <div id="diffDialogLabels" class="muted small"></div>
+            </div>
+            <button value="close" class="icon-button" aria-label="Fechar comparação">×</button>
+        </div>
+        <div id="diffSummary" class="diff-summary"></div>
+        <div id="diffLines" class="diff-lines"></div>
+    </form>
+</dialog>
+
 <script type="module" src="js/app.js"></script>
 </body>
 </html>
