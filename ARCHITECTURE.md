@@ -4,6 +4,8 @@
 
 Aplicativo Android nativo, offline-first, para escrita e organização de manuscritos. O código usa Kotlin, Jetpack Compose, Room, DataStore, Coroutines/StateFlow e uma camada de domínio explícita.
 
+O repositório também contém o cliente `web/`, uma aplicação Web offline-first que usa IndexedDB e o mesmo contrato de backup do Android. A Web é publicada pelo mesmo workflow de release, mas ainda não compartilha binários Kotlin com o Android; a extração para Kotlin Multiplatform deve ocorrer de forma incremental depois que os contratos entre plataformas estiverem estabilizados.
+
 Princípios atuais:
 
 - estado de UI unidirecional;
@@ -26,6 +28,9 @@ graph TB
     DATA --> ROOM["Room DAOs / Database"]
     DATA --> DS["DataStore"]
     UI --> UPDATE["Updater de teste isolado"]
+    WEB["Freeferbook Web"] --> IDB["IndexedDB"]
+    WEB --> ARCHIVE["Backup schema v1"]
+    DATA --> ARCHIVE
     VM --> ARCHIVE["BookArchiveManager"]
     ARCHIVE --> ROOM
 ```
@@ -176,6 +181,56 @@ SettingsScreen
 
 O canal público de testes usa o package `com.livrohub.test`, separado do app local `com.livrohub`.
 
+Ao iniciar `com.livrohub.test`, `StartupUpdatePrompt` executa uma única consulta silenciosa por sessão. Se houver uma versão mais nova, oferece `Atualizar agora` ou `Depois`. Erros de rede no startup não bloqueiam nem exibem alerta; a verificação manual em Configurações continua disponível.
+
+## Freeferbook Web
+
+O cliente Web fica em `web/` e é deliberadamente buildless nesta primeira fase: HTML, CSS e módulos JavaScript são servidos diretamente pelo GitHub Pages. Isso reduz o ciclo de feedback enquanto a plataforma ainda está sendo validada.
+
+Persistência:
+
+```text
+UI Web
+  -> IndexedDB (freeferbook-web/projects)
+      -> livro completo
+          -> capítulos
+          -> rascunhos
+          -> versões
+          -> personagens/locais/imagens
+          -> blobs de mídia importados
+```
+
+O navegador guarda os dados localmente. Não há sincronização em nuvem nesta fase; para mover conteúdo entre Android/Web, usar o backup compatível.
+
+Contrato de interoperabilidade atual:
+
+```text
+freeferbook-book-backup
+schemaVersion = 1
+  ├─ manifest.json
+  └─ media/*
+```
+
+Android e Web devem tratar esse formato como contrato versionado. Mudanças incompatíveis exigem novo `schemaVersion` e leitores retrocompatíveis sempre que possível.
+
+O importador Web lê ZIP STORE e DEFLATE. A exportação Web usa ZIP STORE para não depender de bibliotecas JavaScript externas e continua compatível com `ZipFile`/`ZipOutputStream` do Android.
+
+### Release conjunta Android + Web
+
+O workflow `.github/workflows/android-test-release.yml` produz, no mesmo commit:
+
+```text
+GitHub push main
+  -> APK com.livrohub.test
+  -> update.json
+  -> web-version.json
+  -> web/**
+  -> GitHub Pages
+  -> release test-latest
+```
+
+`web-version.json` e `update.json` permitem conferir no próprio site se Web e Android pertencem ao mesmo ciclo de release.
+
 ## Backup completo de livros
 
 `BookArchiveManager` implementa importação/exportação de um livro inteiro sem alterar o schema Room.
@@ -261,6 +316,16 @@ com.livrohub/
    ├─ settings/
    │  └─ update/
    └─ ...
+
+web/
+├─ index.html
+├─ styles.css
+├─ manifest.webmanifest
+└─ js/
+   ├─ app.js
+   ├─ db.js
+   ├─ markdown.js
+   └─ archive.js
 ```
 
 ## Regras para novas implementações
@@ -274,4 +339,6 @@ com.livrohub/
 7. Mudança de banco: criar migration Room explícita e teste de migration antes de incrementar schema.
 8. Feature online: manter opt-in e desacoplada das funções de escrita/biblioteca offline.
 9. Toda refatoração relevante deve fechar com `testDebugUnitTest` + `assembleDebug`.
+10. Alterações no formato de backup devem ser implementadas/testadas em Android e Web antes de incrementar `schemaVersion`.
+11. A futura versão Desktop deve entrar somente depois de estabilizar os contratos Web/Android; priorizar extração gradual de regras puras para Kotlin Multiplatform, não uma migração total de uma vez.
 10. Mudança no formato de backup: manter compatibilidade retroativa quando possível e incrementar `schemaVersion` quando necessário.

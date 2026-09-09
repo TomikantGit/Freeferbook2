@@ -1,0 +1,9 @@
+{
+  "name": "Freeferbook Web",
+  "short_name": "Freeferbook",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f8f7fb",
+  "theme_color": "#6f2dbd",
+  "description": "Editor de manuscritos Freeferbook no navegador"
+}

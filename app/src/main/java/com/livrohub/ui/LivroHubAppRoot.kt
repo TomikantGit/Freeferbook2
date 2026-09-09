@@ -2,6 +2,7 @@ package com.livrohub.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -41,6 +42,7 @@ import com.livrohub.ui.revision.RevisionScreen
 import com.livrohub.ui.settings.SettingsScreen
 import com.livrohub.ui.settings.SettingsViewModel
 import com.livrohub.ui.theme.LivroHubTheme
+import com.livrohub.ui.update.StartupUpdatePrompt
 import com.livrohub.ui.workspace.BookWorkspaceScreen
 import kotlinx.coroutines.launch
 
@@ -70,40 +72,43 @@ fun LivroHubAppRoot(dependencies: AppDependencies) {
         settings = settings,
         isSystemDark = isSystemInDarkTheme()
     ) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = LivroHubTheme.colors.background
-        ) {
-            AnimatedContent(
-                targetState = navigation.route,
-                label = "AppRouteTransition"
-            ) { route ->
-                when (route) {
-                    AppRoute.HOME -> HomeScreen(
-                        onNavigateToLibrary = { navigation = navigation.openLibrary() },
-                        onNavigateToSettings = { navigation = navigation.openSettings() }
-                    )
+        Box(modifier = Modifier.fillMaxSize()) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = LivroHubTheme.colors.background
+            ) {
+                AnimatedContent(
+                    targetState = navigation.route,
+                    label = "AppRouteTransition"
+                ) { route ->
+                    when (route) {
+                        AppRoute.HOME -> HomeScreen(
+                            onNavigateToLibrary = { navigation = navigation.openLibrary() },
+                            onNavigateToSettings = { navigation = navigation.openSettings() }
+                        )
 
-                    AppRoute.LIBRARY -> LibraryRoute(
-                        dependencies = dependencies,
-                        onOpenBook = { bookId -> navigation = navigation.openBook(bookId) },
-                        onOpenSettings = { navigation = navigation.openSettings() }
-                    )
+                        AppRoute.LIBRARY -> LibraryRoute(
+                            dependencies = dependencies,
+                            onOpenBook = { bookId -> navigation = navigation.openBook(bookId) },
+                            onOpenSettings = { navigation = navigation.openSettings() }
+                        )
 
-                    AppRoute.SETTINGS -> SettingsRoute(
-                        dependencies = dependencies,
-                        onBack = { navigation = navigation.closeSettings() }
-                    )
+                        AppRoute.SETTINGS -> SettingsRoute(
+                            dependencies = dependencies,
+                            onBack = { navigation = navigation.closeSettings() }
+                        )
 
-                    AppRoute.BOOK_WORKSPACE -> BookWorkspaceRoute(
-                        navigation = navigation,
-                        dependencies = dependencies,
-                        settings = settings,
-                        onNavigate = { navigation = it },
-                        onUpdateSettings = updateSettings
-                    )
+                        AppRoute.BOOK_WORKSPACE -> BookWorkspaceRoute(
+                            navigation = navigation,
+                            dependencies = dependencies,
+                            settings = settings,
+                            onNavigate = { navigation = it },
+                            onUpdateSettings = updateSettings
+                        )
+                    }
                 }
             }
+            StartupUpdatePrompt()
         }
     }
 }

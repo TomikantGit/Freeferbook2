@@ -1,4 +1,4 @@
-name: Android Test Release
+name: Freeferbook Test Release
 
 on:
   push:
@@ -118,9 +118,10 @@ jobs:
 
       - name: Preparar canal público de atualização
         run: |
-
           APK_SHA256="$(sha256sum update-site/freeferbook-test.apk | awk '{print $1}')"
           SHORT_SHA="${GITHUB_SHA:0:7}"
+
+          cp -R web/. update-site/
 
           cat > update-site/update.json <<EOF
           {
@@ -132,16 +133,13 @@ jobs:
           }
           EOF
 
-          cat > update-site/index.html <<EOF
-          <!doctype html>
-          <html lang="pt-BR">
-          <head><meta charset="utf-8"><title>Freeferbook</title></head>
-          <body>
-            <h1>Freeferbook — canal de teste</h1>
-            <p>Versão ${{ steps.version.outputs.name }}</p>
-            <p><a href="freeferbook-test.apk">Baixar APK de teste</a></p>
-          </body>
-          </html>
+          cat > update-site/web-version.json <<EOF
+          {
+            "version": "${{ steps.version.outputs.name }}",
+            "commit": "$GITHUB_SHA",
+            "shortSha": "$SHORT_SHA",
+            "runNumber": $GITHUB_RUN_NUMBER
+          }
           EOF
 
       - name: Guardar artefato do workflow
@@ -172,7 +170,7 @@ jobs:
             --notes "APK ${{ steps.version.outputs.name }} gerado automaticamente pelo GitHub Actions a partir do commit $GITHUB_SHA." \
             --prerelease
 
-  deploy-update-channel:
+  deploy-web-and-update-channel:
     needs: build-and-publish
     runs-on: ubuntu-latest
     environment:
@@ -186,6 +184,6 @@ jobs:
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Publicar canal de atualização
+      - name: Publicar Web e canal de atualização
         id: deployment
         uses: actions/deploy-pages@v4

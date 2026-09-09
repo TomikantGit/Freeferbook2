@@ -285,6 +285,20 @@
 - O leitor de ZIP nao extrai nomes de caminho fornecidos pelo arquivo: midias sao copiadas para nomes gerados pelo app e limitadas por tamanho, reduzindo risco de zip-slip/zip bomb.
 - `OfflineBookRepositoryTest` foi adaptado para a nova consulta direta de `BookDao`; adicionados testes de sanitizacao do nome de arquivo de backup.
 
+## Modulo 23 — Freeferbook Web e release multiplataforma inicial (2026-09-09)
+
+- Criada a primeira versao funcional do Freeferbook Web em `web/`, publicada pelo mesmo GitHub Actions que gera o APK Android.
+- A Web usa IndexedDB para armazenar projetos localmente no navegador, sem backend ou conta obrigatoria nesta fase.
+- Implementadas Biblioteca, criacao/renomeacao/exclusao de livros, capitulos, editor, rascunho automatico, visao Markdown e historico imutavel de versoes.
+- A Web importa e exporta o mesmo formato `freeferbook-book-backup`/`schemaVersion = 1` criado pelo Android, incluindo historico, personagens, locais, imagens e midias incorporadas quando presentes.
+- O leitor ZIP Web suporta entradas STORE e DEFLATE; foi validado com ZIP comprimido equivalente ao gerado pelo Android e com round-trip Web -> ZIP -> Web.
+- Antes de exportar um projeto com rascunhos nao versionados, a Web pede confirmacao e cria versoes automaticas para evitar perda do texto mais recente no backup.
+- A pagina inicial exibe a versao/commit Web e a versao Android publicados no mesmo run, facilitando conferir se o deploy de cada plataforma corresponde ao mesmo commit.
+- O workflow passou a copiar `web/` para o artefato do GitHub Pages, gerar `web-version.json`, manter `update.json`/APK na mesma raiz e foi renomeado para `Freeferbook Test Release`.
+- Adicionado aviso automatico de nova atualizacao ao iniciar `com.livrohub.test`: o usuario pode escolher `Atualizar agora` ou `Depois`; falhas de rede na checagem inicial sao silenciosas.
+- O fluxo automatico reaproveita `TestUpdateManager`, mantendo download, validacao SHA-256 e instalacao confirmada pelo Android.
+- `compileDebugKotlin`, `testDebugUnitTest`, `assembleDebug`, `publicTestBuild`, verificacao sintatica dos modulos JavaScript e `git diff --check` foram executados com sucesso.
+
 ## Observacoes
 
 - O ambiente local atual possui Java/Android SDK suficientes para `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` em modo offline.
