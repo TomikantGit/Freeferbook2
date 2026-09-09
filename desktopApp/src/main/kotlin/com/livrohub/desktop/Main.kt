@@ -33,6 +33,9 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.livrohub.domain.revision.TextRevisionEngine
 import kotlinx.coroutines.delay
+import java.awt.FileDialog
+import java.awt.Frame
+import java.nio.file.Path
 
 fun main() = application {
     val state = remember { DesktopAppState() }
@@ -64,7 +67,15 @@ private fun DesktopApp(state: DesktopAppState) {
     Row(modifier = Modifier.fillMaxSize()) {
         LibraryPane(
             state = state,
-            onNewBook = { newBookDialog = true }
+            onNewBook = { newBookDialog = true },
+            onImportBook = {
+                chooseImportArchive()?.let(state::importBook)
+            },
+            onExportBook = {
+                val book = state.currentBook ?: return@LibraryPane
+                chooseExportArchive(DesktopArchiveManager.suggestedFileName(book.book.title))
+                    ?.let(state::exportCurrentBook)
+            }
         )
         ChapterPane(
             state = state,
@@ -99,7 +110,12 @@ private fun DesktopApp(state: DesktopAppState) {
 }
 
 @Composable
-private fun LibraryPane(state: DesktopAppState, onNewBook: () -> Unit) {
+private fun LibraryPane(
+    state: DesktopAppState,
+    onNewBook: () -> Unit,
+    onImportBook: () -> Unit,
+    onExportBook: () -> Unit
+) {
     Column(
         modifier = Modifier.width(230.dp).fillMaxHeight().padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -107,6 +123,21 @@ private fun LibraryPane(state: DesktopAppState, onNewBook: () -> Unit) {
         Text("Freeferbook", style = MaterialTheme.typography.headlineSmall)
         Button(onClick = onNewBook, modifier = Modifier.fillMaxWidth()) {
             Text("+ Novo livro")
+        }
+        OutlinedButton(onClick = onImportBook, modifier = Modifier.fillMaxWidth()) {
+            Text("Importar backup")
+        }
+        OutlinedButton(
+            onClick = onExportBook,
+            enabled = state.currentBook != null,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Exportar livro (.zip)")
+        }
+        state.notice?.let { message ->
+            Card(modifier = Modifier.fillMaxWidth().clickable(onClick = state::clearNotice)) {
+                Text(message, modifier = Modifier.padding(9.dp), style = MaterialTheme.typography.bodySmall)
+            }
         }
         HorizontalDivider()
         if (state.books.isEmpty()) {
@@ -130,6 +161,29 @@ private fun LibraryPane(state: DesktopAppState, onNewBook: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+private fun chooseImportArchive(): Path? {
+    val dialog = FileDialog(null as Frame?, "Importar backup Freeferbook", FileDialog.LOAD).apply {
+        isVisible = true
+    }
+    val file = dialog.file ?: return null
+    return Path.of(dialog.directory, file)
+}
+
+private fun chooseExportArchive(suggestedName: String): Path? {
+    val dialog = FileDialog(null as Frame?, "Exportar backup Freeferbook", FileDialog.SAVE).apply {
+        file = suggestedName
+        isVisible = true
+    }
+    val file = dialog.file ?: return null
+    val selected = Path.of(dialog.directory, file)
+    val name = selected.fileName.toString()
+    return if (name.endsWith(".zip", ignoreCase = true) || name.endsWith(".freeferbook", ignoreCase = true)) {
+        selected
+    } else {
+        selected.resolveSibling("$name.zip")
     }
 }
 

@@ -18,9 +18,42 @@ data class DesktopChapterDocument(
     val versions: List<ChapterVersion>
 )
 
+data class DesktopCharacterDocument(
+    val name: String,
+    val surnames: String,
+    val chapters: String,
+    val imageUri: String?,
+    val mediaId: String?
+)
+
+data class DesktopLocationDocument(
+    val name: String,
+    val description: String,
+    val chapters: String,
+    val imageUri: String?,
+    val mediaId: String?
+)
+
+data class DesktopImageDocument(
+    val url: String,
+    val description: String,
+    val createdAt: Long,
+    val mediaId: String?
+)
+
+data class DesktopMediaDocument(
+    val id: String,
+    val entryName: String,
+    val localPath: String
+)
+
 data class DesktopBookDocument(
     val book: Book,
-    val chapters: List<DesktopChapterDocument>
+    val chapters: List<DesktopChapterDocument>,
+    val characters: List<DesktopCharacterDocument> = emptyList(),
+    val locations: List<DesktopLocationDocument> = emptyList(),
+    val images: List<DesktopImageDocument> = emptyList(),
+    val media: List<DesktopMediaDocument> = emptyList()
 )
 
 class DesktopStore(
@@ -30,7 +63,8 @@ class DesktopStore(
         if (!Files.exists(file)) return emptyList()
         DataInputStream(BufferedInputStream(Files.newInputStream(file))).use { input ->
             require(input.readInt() == MAGIC) { "Arquivo local do Freeferbook inválido." }
-            require(input.readInt() == VERSION) { "Versão do armazenamento Desktop não suportada." }
+            val storageVersion = input.readInt()
+            require(storageVersion in 1..VERSION) { "Versão do armazenamento Desktop não suportada." }
             val bookCount = input.readBoundedCount(MAX_BOOKS)
             return List(bookCount) {
                 val book = Book(
@@ -64,7 +98,44 @@ class DesktopStore(
                     }
                     DesktopChapterDocument(chapter, draft, versions)
                 }
-                DesktopBookDocument(book, chapters)
+                if (storageVersion == 1) {
+                    DesktopBookDocument(book, chapters)
+                } else {
+                    val characters = List(input.readBoundedCount(MAX_WORLD_ITEMS_PER_BOOK)) {
+                        DesktopCharacterDocument(
+                            name = input.readStringValue(),
+                            surnames = input.readStringValue(),
+                            chapters = input.readStringValue(),
+                            imageUri = input.readNullableString(),
+                            mediaId = input.readNullableString()
+                        )
+                    }
+                    val locations = List(input.readBoundedCount(MAX_WORLD_ITEMS_PER_BOOK)) {
+                        DesktopLocationDocument(
+                            name = input.readStringValue(),
+                            description = input.readStringValue(),
+                            chapters = input.readStringValue(),
+                            imageUri = input.readNullableString(),
+                            mediaId = input.readNullableString()
+                        )
+                    }
+                    val images = List(input.readBoundedCount(MAX_WORLD_ITEMS_PER_BOOK)) {
+                        DesktopImageDocument(
+                            url = input.readStringValue(),
+                            description = input.readStringValue(),
+                            createdAt = input.readLong(),
+                            mediaId = input.readNullableString()
+                        )
+                    }
+                    val media = List(input.readBoundedCount(MAX_MEDIA_ITEMS_PER_BOOK)) {
+                        DesktopMediaDocument(
+                            id = input.readStringValue(),
+                            entryName = input.readStringValue(),
+                            localPath = input.readStringValue()
+                        )
+                    }
+                    DesktopBookDocument(book, chapters, characters, locations, images, media)
+                }
             }
         }
     }
@@ -101,6 +172,35 @@ class DesktopStore(
                         output.writeInt(version.charCount)
                         output.writeInt(version.lineCount)
                     }
+                }
+                output.writeInt(document.characters.size)
+                document.characters.forEach { character ->
+                    output.writeStringValue(character.name)
+                    output.writeStringValue(character.surnames)
+                    output.writeStringValue(character.chapters)
+                    output.writeNullableString(character.imageUri)
+                    output.writeNullableString(character.mediaId)
+                }
+                output.writeInt(document.locations.size)
+                document.locations.forEach { location ->
+                    output.writeStringValue(location.name)
+                    output.writeStringValue(location.description)
+                    output.writeStringValue(location.chapters)
+                    output.writeNullableString(location.imageUri)
+                    output.writeNullableString(location.mediaId)
+                }
+                output.writeInt(document.images.size)
+                document.images.forEach { image ->
+                    output.writeStringValue(image.url)
+                    output.writeStringValue(image.description)
+                    output.writeLong(image.createdAt)
+                    output.writeNullableString(image.mediaId)
+                }
+                output.writeInt(document.media.size)
+                document.media.forEach { media ->
+                    output.writeStringValue(media.id)
+                    output.writeStringValue(media.entryName)
+                    output.writeStringValue(media.localPath)
                 }
             }
         }
@@ -145,10 +245,12 @@ class DesktopStore(
 
     companion object {
         private const val MAGIC = 0x46464231 // FFB1
-        private const val VERSION = 1
+        private const val VERSION = 2
         private const val MAX_BOOKS = 10_000
         private const val MAX_CHAPTERS_PER_BOOK = 100_000
         private const val MAX_VERSIONS_PER_CHAPTER = 100_000
+        private const val MAX_WORLD_ITEMS_PER_BOOK = 100_000
+        private const val MAX_MEDIA_ITEMS_PER_BOOK = 100_000
         private const val MAX_STRING_BYTES = 100 * 1024 * 1024
 
         fun defaultPath(): Path = Path.of(

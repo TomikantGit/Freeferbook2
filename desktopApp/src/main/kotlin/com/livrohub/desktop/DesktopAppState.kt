@@ -7,9 +7,11 @@ import com.livrohub.domain.model.Book
 import com.livrohub.domain.model.Chapter
 import com.livrohub.domain.model.ChapterVersion
 import com.livrohub.domain.revision.TextRevisionEngine
+import java.nio.file.Path
 
 class DesktopAppState(
-    private val store: DesktopStore = DesktopStore()
+    private val store: DesktopStore = DesktopStore(),
+    private val archiveManager: DesktopArchiveManager = DesktopArchiveManager()
 ) {
     var books by mutableStateOf(runCatching(store::load).getOrDefault(emptyList()))
         private set
@@ -20,6 +22,9 @@ class DesktopAppState(
     var selectedChapterId by mutableStateOf(
         books.firstOrNull()?.chapters?.minByOrNull { it.chapter.orderIndex }?.chapter?.id
     )
+        private set
+
+    var notice by mutableStateOf<String?>(null)
         private set
 
     val currentBook: DesktopBookDocument?
@@ -108,8 +113,75 @@ class DesktopAppState(
         updateDraft(TextRevisionEngine.applyAllSafe(chapter.draft))
     }
 
+    fun importBook(source: Path) {
+        runCatching { archiveManager.importBook(source, books) }
+            .onSuccess { imported ->
+                books = books + imported
+                selectedBookId = imported.book.id
+                selectedChapterId = imported.chapters.minByOrNull { it.chapter.orderIndex }?.chapter?.id
+                persist()
+                notice = "Livro \"${imported.book.title}\" importado com ${imported.chapters.size} capítulo(s)."
+            }
+            .onFailure { error ->
+                notice = error.message ?: "Não foi possível importar o backup."
+            }
+    }
+
+    fun exportCurrentBook(destination: Path) {
+        val book = currentBook ?: return
+        runCatching {
+            val prepared = prepareBookForBackup(book)
+            archiveManager.exportBook(prepared, destination)
+        }.onSuccess {
+            notice = "Backup de \"${book.book.title}\" criado em ${destination.fileName}."
+        }.onFailure { error ->
+            notice = error.message ?: "Não foi possível exportar o backup."
+        }
+    }
+
+    fun clearNotice() {
+        notice = null
+    }
+
     fun persist() {
         store.save(books)
+    }
+
+    private fun prepareBookForBackup(book: DesktopBookDocument): DesktopBookDocument {
+        var nextVersionId = (
+            books.flatMap { it.chapters }.flatMap { it.versions }.maxOfOrNull { it.id } ?: 0L
+            ) + 1L
+        var changed = false
+        val chapters = book.chapters.map { document ->
+            val latest = document.versions.maxByOrNull { it.sequenceNumber }
+            if (latest?.content == document.draft) {
+                document
+            } else {
+                changed = true
+                val content = document.draft
+                val review = TextRevisionEngine.review(content)
+                val nextSequence = (document.versions.maxOfOrNull { it.sequenceNumber } ?: 0) + 1
+                document.copy(
+                    versions = document.versions + ChapterVersion(
+                        id = nextVersionId++,
+                        chapterId = document.chapter.id,
+                        content = content,
+                        createdAt = System.currentTimeMillis(),
+                        message = "Versão automática antes do backup Desktop",
+                        sequenceNumber = nextSequence,
+                        wordCount = review.wordCount,
+                        charCount = content.length,
+                        lineCount = if (content.isEmpty()) 0 else content.lineSequence().count()
+                    )
+                )
+            }
+        }
+        val prepared = book.copy(chapters = chapters)
+        if (changed) {
+            replaceCurrentBook(prepared)
+            persist()
+        }
+        return prepared
     }
 
     private fun updateCurrentChapter(transform: (DesktopChapterDocument) -> DesktopChapterDocument) {

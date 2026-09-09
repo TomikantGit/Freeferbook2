@@ -386,6 +386,7 @@ desktopApp/
 └─ src/
    ├─ main/kotlin/com/livrohub/desktop/
    │  ├─ DesktopAppState.kt
+   │  ├─ DesktopArchiveManager.kt
    │  ├─ DesktopStore.kt
    │  └─ Main.kt
    └─ test/kotlin/com/livrohub/desktop/
@@ -426,7 +427,7 @@ contracts/
 7. Mudança de banco: criar migration Room explícita e teste de migration antes de incrementar schema.
 8. Feature online: manter opt-in e desacoplada das funções de escrita/biblioteca offline.
 9. Toda refatoração relevante deve fechar com `testDebugUnitTest` + `assembleDebug`.
-10. Alterações no formato de backup devem ser implementadas/testadas em Android e Web antes de incrementar `schemaVersion`.
+10. Alterações no formato de backup devem ser implementadas/testadas em Android, Web e Desktop antes de incrementar `schemaVersion`.
 11. A futura versão Desktop deve consumir `:core`; código puro não deve ser copiado de volta para `desktopApp` ou `app`.
 12. Mudança no formato de backup: manter compatibilidade retroativa quando possível e atualizar a fixture/validador junto da implementação.
 	13. Configurações específicas da Web não devem alterar silenciosamente o contrato de backup; preferências de navegador permanecem locais salvo quando houver um contrato multiplataforma explícito.
@@ -437,3 +438,5 @@ contracts/
 	18. O Service Worker Web deve manter metadados de release em estratégia network-first e nunca cachear o APK de atualização.
 19. Novas regras puras de manuscrito devem preferencialmente entrar em `:core`; regras específicas de UI/Room/Android continuam no `app`.
 20. O Desktop deve consumir `:core` e o contrato de backup portátil; não criar implementações divergentes de revisão/diff/modelos dentro de `desktopApp`.
+21. `DesktopStore` é armazenamento interno e pode evoluir independentemente do backup portátil; mudanças nele devem manter leitura de versões anteriores já distribuídas sempre que possível.
+22. Mídia importada pelo Desktop deve ser copiada para o diretório privado `~/.freeferbook/media/`; o caminho externo original não é uma dependência de persistência do backup.

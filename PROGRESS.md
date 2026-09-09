@@ -400,6 +400,18 @@
 - A Web passou a exibir a versao Desktop junto de Web/Android e oferece download fixo do MSI pela release `test-latest`.
 - O armazenamento local Desktop ainda nao e o backup portatil `.freeferbook`; interoperabilidade de importacao/exportacao com Android/Web fica como proximo bloco.
 
+## Modulo 33 — Backup portatil no Desktop (2026-09-09)
+
+- Criado `DesktopArchiveManager`, capaz de importar e exportar `freeferbook-book-backup/schemaVersion = 1` em `.zip` ou `.freeferbook`.
+- O Desktop agora preserva capitulos, historico de versoes, personagens, locais, imagens e midias incorporadas mesmo antes de todas essas areas terem UI propria no cliente Desktop.
+- `DesktopStore` foi evoluido internamente para v2, mantendo leitura retrocompativel dos arquivos v1 ja criados pela primeira MSI; o caminho do arquivo permanece o mesmo para evitar perda/migracao manual de dados.
+- Midias importadas sao copiadas para `~/.freeferbook/media/` com IDs gerados e limites equivalentes aos outros clientes; referencias ZIP sao validadas para permanecer sob `media/` e evitar traversal.
+- A exportacao Desktop cria uma versao automatica apenas quando um capitulo possui rascunho diferente da ultima versao, garantindo que o texto atual entre no backup.
+- A Biblioteca Desktop ganhou `Importar backup` e `Exportar livro (.zip)` com seletor de arquivos nativo e feedback de sucesso/erro.
+- RAR e 7z continuam detectados e rejeitados explicitamente, coerente com Android/Web; ZIP continua sendo o container portatil oficial.
+- `scripts/validate-backup-contract.mjs` passou a comparar `FORMAT_ID` e `SCHEMA_VERSION` de Android, Web e Desktop contra a fixture canonica.
+- Adicionados testes de round-trip ZIP com midia incorporada, persistencia de metadados worldbuilding, leitura do armazenamento Desktop v1 e exportacao de rascunho ainda nao versionado.
+
 ## Observacoes
 
 - O ambiente local atual possui Java/Android SDK suficientes para `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` em modo offline.

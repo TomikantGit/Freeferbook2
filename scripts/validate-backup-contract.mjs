@@ -8,10 +8,12 @@ const root = resolve(here, "..");
 const fixturePath = resolve(root, "contracts/book-backup-v1.sample.json");
 const androidPath = resolve(root, "app/src/main/java/com/livrohub/data/archive/BookArchiveManager.kt");
 const webArchivePath = resolve(root, "web/js/archive.js");
+const desktopArchivePath = resolve(root, "desktopApp/src/main/kotlin/com/livrohub/desktop/DesktopArchiveManager.kt");
 
 const fixture = JSON.parse(await readFile(fixturePath, "utf8"));
 const androidSource = await readFile(androidPath, "utf8");
 const webSource = await readFile(webArchivePath, "utf8");
+const desktopSource = await readFile(desktopArchivePath, "utf8");
 
 assert.equal(fixture.format, "freeferbook-book-backup");
 assert.equal(fixture.schemaVersion, 1);
@@ -25,11 +27,15 @@ const androidFormat = androidSource.match(/FORMAT_ID\s*=\s*"([^"]+)"/)?.[1];
 const androidSchema = Number(androidSource.match(/SCHEMA_VERSION\s*=\s*(\d+)/)?.[1]);
 const webFormat = webSource.match(/FORMAT_ID\s*=\s*"([^"]+)"/)?.[1];
 const webSchema = Number(webSource.match(/SCHEMA_VERSION\s*=\s*(\d+)/)?.[1]);
+const desktopFormat = desktopSource.match(/FORMAT_ID\s*=\s*"([^"]+)"/)?.[1];
+const desktopSchema = Number(desktopSource.match(/SCHEMA_VERSION\s*=\s*(\d+)/)?.[1]);
 
 assert.equal(androidFormat, fixture.format, "Android e fixture usam FORMAT_ID diferentes");
 assert.equal(webFormat, fixture.format, "Web e fixture usam FORMAT_ID diferentes");
+assert.equal(desktopFormat, fixture.format, "Desktop e fixture usam FORMAT_ID diferentes");
 assert.equal(androidSchema, fixture.schemaVersion, "Android e fixture usam schemaVersion diferentes");
 assert.equal(webSchema, fixture.schemaVersion, "Web e fixture usam schemaVersion diferentes");
+assert.equal(desktopSchema, fixture.schemaVersion, "Desktop e fixture usam schemaVersion diferentes");
 
 globalThis.window ??= globalThis;
 const { exportFreeferbookArchive, importFreeferbookArchive } = await import(pathToFileURL(webArchivePath));
