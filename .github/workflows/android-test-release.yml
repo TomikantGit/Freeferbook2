@@ -23,8 +23,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Validar contrato Android/Web de backup
-        run: node scripts/validate-backup-contract.mjs
+      - name: Validar contratos e lógica Web
+        run: |
+          node scripts/validate-backup-contract.mjs
+          node scripts/test-web-formatting.mjs
+          node scripts/test-web-revision.mjs
 
       - name: Validar formatacao Web
         run: node scripts/test-web-formatting.mjs

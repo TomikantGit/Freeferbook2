@@ -334,6 +334,16 @@
 - Smoke test em Chrome real confirmou negrito + sublinhado combinado, lista numerada, conversao para marcador `★` e renderizacao no preview.
 - A renderizacao continuou usando `web/js/markdown.js`, portanto editor e preview compartilham a mesma sintaxe do Android.
 
+## Modulo 27 — Revisao textual Web (2026-09-09)
+
+- Criado `web/js/revision.js`, espelhando os criterios deterministas do `TextRevisionEngine` Android.
+- A Web detecta espaco duplicado, espaco antes de pontuacao, palavra repetida e frases com 35 ou mais palavras.
+- Correcoes mecanicas podem ser aplicadas individualmente ou em lote; frases longas permanecem apenas como sugestao editorial.
+- O editor ganhou uma quarta visualizacao `Revisao`, com resumo de palavras, frases, paragrafos e quantidade de ocorrencias.
+- Correcoes atualizam o rascunho e sao persistidas automaticamente, mas nao criam uma versao no historico ate o usuario salvar explicitamente.
+- Criado `scripts/test-web-revision.mjs`, cobrindo deteccao, contagens, correcao individual e correcao em lote.
+- A etapa inicial do GitHub Actions passou a validar contrato de backup, formatacao e revisao Web antes de configurar Java/Gradle.
+
 ## Observacoes
 
 - O ambiente local atual possui Java/Android SDK suficientes para `compileDebugKotlin`, `testDebugUnitTest` e `assembleDebug` em modo offline.

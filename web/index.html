@@ -106,6 +106,7 @@
                             <button class="segment active" data-view-mode="edit">Editar</button>
                             <button class="segment" data-view-mode="preview">Visão</button>
                             <button class="segment" data-view-mode="history">Histórico</button>
+                            <button class="segment" data-view-mode="revision">Revisão</button>
                         </div>
                         <div class="editor-toolbar-actions">
                             <span id="draftStatus" class="muted small">Sem alterações</span>
@@ -164,6 +165,13 @@
 
                     <div id="historyPane" class="mode-pane hidden">
                         <div id="historyList" class="history-list"></div>
+                    </div>
+
+                    <div id="revisionPane" class="mode-pane hidden">
+                        <div class="revision-content">
+                            <div id="revisionSummary" class="revision-summary"></div>
+                            <div id="revisionList" class="revision-list"></div>
+                        </div>
                     </div>
                 </div>
 

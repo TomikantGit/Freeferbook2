@@ -333,6 +333,19 @@ button { cursor: pointer; }
 .history-title { font-weight: 750; }
 .history-snippet { color: var(--muted); font-size: .86rem; white-space: pre-wrap; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
 
+.revision-content { width: min(860px, calc(100% - 40px)); margin: 0 auto; padding: 24px 0 80px; display: grid; gap: 14px; }
+.revision-summary { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); padding: 16px; display: grid; gap: 8px; }
+.revision-summary-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.revision-summary-title { font-weight: 800; }
+.revision-metrics { color: var(--muted); }
+.revision-list { display: grid; gap: 10px; }
+.revision-item { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); padding: 14px; display: grid; gap: 8px; }
+.revision-item-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.revision-item-title { font-weight: 760; }
+.revision-excerpt { font-style: italic; white-space: pre-wrap; }
+.revision-suggestion { color: var(--primary); font-size: .78rem; font-weight: 750; text-transform: uppercase; letter-spacing: .05em; }
+.revision-empty { text-align: center; padding: 34px 16px; color: var(--muted); }
+
 .worldbuilding-editor { height: 100%; overflow: auto; padding: clamp(22px, 5vw, 56px); }
 .worldbuilding-header {
     width: min(760px, 100%);

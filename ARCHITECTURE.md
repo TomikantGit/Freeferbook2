@@ -338,23 +338,25 @@ com.livrohub/
    │  └─ update/
    └─ ...
 
-web/
-├─ index.html
-├─ styles.css
-├─ manifest.webmanifest
-└─ js/
-   ├─ app.js
-   ├─ db.js
-   ├─ formatting.js
-   ├─ markdown.js
-   └─ archive.js
+	web/
+	├─ index.html
+	├─ styles.css
+	├─ manifest.webmanifest
+	└─ js/
+	   ├─ app.js
+	   ├─ db.js
+	   ├─ formatting.js
+	   ├─ markdown.js
+	   ├─ revision.js
+	   └─ archive.js
 
 contracts/
 └─ book-backup-v1.sample.json
 
-scripts/
-├─ validate-backup-contract.mjs
-└─ test-web-formatting.mjs
+	scripts/
+	├─ validate-backup-contract.mjs
+	├─ test-web-formatting.mjs
+	└─ test-web-revision.mjs
 ```
 
 ## Regras para novas implementações
@@ -371,5 +373,6 @@ scripts/
 10. Alterações no formato de backup devem ser implementadas/testadas em Android e Web antes de incrementar `schemaVersion`.
 11. A futura versão Desktop deve entrar somente depois de estabilizar os contratos Web/Android; priorizar extração gradual de regras puras para Kotlin Multiplatform, não uma migração total de uma vez.
 12. Mudança no formato de backup: manter compatibilidade retroativa quando possível e atualizar a fixture/validador junto da implementação.
-13. Configurações específicas da Web não devem alterar silenciosamente o contrato de backup; preferências de navegador permanecem locais salvo quando houver um contrato multiplataforma explícito.
-14. Regra de formatação Web deve permanecer em módulo puro/testável; eventos de DOM, foco e seleção ficam em `app.js`.
+	13. Configurações específicas da Web não devem alterar silenciosamente o contrato de backup; preferências de navegador permanecem locais salvo quando houver um contrato multiplataforma explícito.
+	14. Regra de formatação Web deve permanecer em módulo puro/testável; eventos de DOM, foco e seleção ficam em `app.js`.
+	15. Regras determinísticas espelhadas entre Android e Web, como revisão textual, devem manter os mesmos critérios e testes equivalentes antes de serem estendidas.

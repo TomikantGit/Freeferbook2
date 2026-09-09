@@ -2,6 +2,7 @@ import { listProjects, saveProject, removeProject, newProject, newChapter } from
 import { renderMarkdown, textStats } from "./markdown.js";
 import { importFreeferbookArchive, exportFreeferbookArchive, downloadBlob } from "./archive.js";
 import { applyCustomMarker, applyMarkdownFormat } from "./formatting.js";
+import { applyAllSafeRevision, applyRevisionIssue, reviewText } from "./revision.js";
 
 const $ = selector => document.querySelector(selector);
 const elements = {
@@ -26,6 +27,9 @@ const elements = {
     draftStatus: $("#draftStatus"),
     previewContent: $("#previewContent"),
     historyList: $("#historyList"),
+    revisionPane: $("#revisionPane"),
+    revisionSummary: $("#revisionSummary"),
+    revisionList: $("#revisionList"),
     editPane: $("#editPane"),
     previewPane: $("#previewPane"),
     historyPane: $("#historyPane"),
@@ -598,14 +602,114 @@ function renderHistory() {
     }
 }
 
+function applyRevisionText(nextText) {
+    const chapter = currentChapter();
+    if (!chapter || nextText === chapter.draftContent) return;
+    chapter.draftContent = nextText;
+    elements.editor.value = nextText;
+    updateEditorMeta();
+    renderChapterList();
+    schedulePersist();
+    renderRevision();
+}
+
+function renderRevision() {
+    const chapter = currentChapter();
+    const text = chapter?.draftContent ?? "";
+    const result = reviewText(text);
+    elements.revisionSummary.replaceChildren();
+    elements.revisionList.replaceChildren();
+
+    const header = document.createElement("div");
+    header.className = "revision-summary-header";
+    const title = document.createElement("div");
+    title.className = "revision-summary-title";
+    title.textContent = "Resumo do capítulo";
+    header.append(title);
+
+    if (result.autoFixableCount > 0) {
+        const fixAll = document.createElement("button");
+        fixAll.className = "primary-button compact";
+        fixAll.textContent = `Corrigir ${result.autoFixableCount}`;
+        fixAll.addEventListener("click", () => {
+            applyRevisionText(applyAllSafeRevision(text, result));
+            showToast(`${result.autoFixableCount} correção(ões) segura(s) aplicada(s).`);
+        });
+        header.append(fixAll);
+    }
+
+    const metrics = document.createElement("div");
+    metrics.className = "revision-metrics";
+    metrics.textContent = `${result.wordCount} palavras • ${result.sentenceCount} frases • ${result.paragraphCount} parágrafos`;
+    const issuesSummary = document.createElement("div");
+    issuesSummary.className = "muted small";
+    issuesSummary.textContent = result.issues.length === 1 ? "1 ponto para revisar" : `${result.issues.length} pontos para revisar`;
+    elements.revisionSummary.append(header, metrics, issuesSummary);
+
+    if (!text.trim()) {
+        const empty = document.createElement("div");
+        empty.className = "revision-empty";
+        empty.textContent = "Nada para revisar. Escreva algum conteúdo no capítulo e abra a revisão novamente.";
+        elements.revisionList.append(empty);
+        return;
+    }
+
+    if (!result.issues.length) {
+        const empty = document.createElement("div");
+        empty.className = "revision-empty";
+        empty.textContent = "Nenhum problema mecânico encontrado pelos critérios atuais.";
+        elements.revisionList.append(empty);
+        return;
+    }
+
+    for (const issue of result.issues) {
+        const card = document.createElement("div");
+        card.className = "revision-item";
+
+        const cardHeader = document.createElement("div");
+        cardHeader.className = "revision-item-header";
+        const issueTitle = document.createElement("div");
+        issueTitle.className = "revision-item-title";
+        issueTitle.textContent = issue.title;
+        cardHeader.append(issueTitle);
+
+        if (issue.isAutoFixable) {
+            const fix = document.createElement("button");
+            fix.className = "secondary-button compact";
+            fix.textContent = "Corrigir";
+            fix.addEventListener("click", () => {
+                applyRevisionText(applyRevisionIssue(text, issue));
+                showToast("Correção aplicada ao rascunho.");
+            });
+            cardHeader.append(fix);
+        } else {
+            const suggestion = document.createElement("span");
+            suggestion.className = "revision-suggestion";
+            suggestion.textContent = "Sugestão";
+            cardHeader.append(suggestion);
+        }
+
+        const description = document.createElement("div");
+        description.className = "muted";
+        description.textContent = issue.description;
+        const excerpt = document.createElement("div");
+        excerpt.className = "revision-excerpt";
+        excerpt.textContent = issue.excerpt;
+        card.append(cardHeader, description, excerpt);
+        elements.revisionList.append(card);
+    }
+}
+
 function switchViewMode(mode, rerender = true) {
     viewMode = mode;
     document.querySelectorAll("[data-view-mode]").forEach(button => button.classList.toggle("active", button.dataset.viewMode === mode));
     elements.editPane.classList.toggle("hidden", mode !== "edit");
     elements.previewPane.classList.toggle("hidden", mode !== "preview");
     elements.historyPane.classList.toggle("hidden", mode !== "history");
+    elements.revisionPane.classList.toggle("hidden", mode !== "revision");
     if (mode === "preview") renderPreview();
     if (mode === "history") renderHistory();
+    if (mode === "revision") renderRevision();
     if (rerender) renderChapterList();
 }
 
