@@ -22,6 +22,26 @@ import java.util.zip.ZipOutputStream
 class DesktopArchiveManager(
     private val mediaRoot: Path = defaultMediaRoot()
 ) {
+    fun attachLocalMedia(source: Path): DesktopMediaDocument {
+        require(Files.isRegularFile(source)) { "Arquivo de imagem não encontrado." }
+        val size = Files.size(source)
+        require(size in 1..MAX_MEDIA_ENTRY_BYTES) { "A imagem deve ter no máximo 100 MB." }
+        Files.createDirectories(mediaRoot)
+        val id = UUID.randomUUID().toString()
+        val extension = safeExtension(source.fileName.toString())
+        val destination = mediaRoot.resolve("$id.$extension")
+        Files.copy(source, destination)
+        return DesktopMediaDocument(
+            id = id,
+            entryName = "media/$id.$extension",
+            localPath = destination.toAbsolutePath().toString()
+        )
+    }
+
+    fun deleteLocalMedia(media: DesktopMediaDocument) {
+        runCatching { Files.deleteIfExists(Path.of(media.localPath)) }
+    }
+
     fun exportBook(document: DesktopBookDocument, destination: Path) {
         destination.parent?.let(Files::createDirectories)
         val entryByMediaId = linkedMapOf<String, String>()
